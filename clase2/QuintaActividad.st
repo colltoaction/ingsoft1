@@ -11,48 +11,51 @@ DenotativeObject subclass: #I
 I class
 	instanceVariableNames: ''!
 
-!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:48:51'!
-* otroNumero
-	^otroNumero! !
-
-!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:06:11'!
-+ otroNumero
-	^otroNumero next! !
-
-!I class methodsFor: 'as yet unclassified' stamp: 'MC 3/26/2018 20:00:41'!
-- otroNumero
-	Error signal: self descripcionDeErrorDeNumerosNegativosNoSoportados! !
-
-!I class methodsFor: 'as yet unclassified' stamp: 'MC 3/26/2018 20:32:22'!
-/ otroNumero
-	otroNumero = self
-		ifTrue: [^I]
-		ifFalse: [^Error signal: self descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor]! !
-
-!I class methodsFor: 'as yet unclassified' stamp: 'MC 3/26/2018 21:02:58'!
-<= otroNumero
-	^true! !
-
-!I class methodsFor: 'as yet unclassified' stamp: 'MC 3/26/2018 20:31:04'!
-descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor
-	^'No se puede dividir por un número mayor o igual a él'! !
-
-!I class methodsFor: 'as yet unclassified' stamp: 'MC 3/26/2018 20:00:31'!
-descripcionDeErrorDeNumerosNegativosNoSoportados
-	^'No se puede restar a un número con otro mayor o igual a él'! !
-
-!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 14:24:54'!
-multiplyWith: aNumber
-
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:57:12'!
+* aNumber
 	^aNumber.! !
 
-!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 20:58:54'!
-next
-	^II! !
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:57:21'!
++ aNumber
+	^aNumber next.! !
 
-!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:05:30'!
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:57:32'!
+- aNumber
+	Error signal: self descripcionDeErrorDeNumerosNegativosNoSoportados.! !
+
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:57:49'!
+/ aNumber
+	aNumber = self
+		ifTrue: [^I]
+		ifFalse: [^Error signal: self descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor].! !
+
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:08:01'!
+< aNumber
+	^aNumber ~= self! !
+
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:58:11'!
+descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor
+	^'No se puede dividir por un número mayor o igual a él'.! !
+
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:58:15'!
+descripcionDeErrorDeNumerosNegativosNoSoportados
+	^'No se puede restar a un número con otro mayor o igual a él'.! !
+
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:16:42'!
+greaterThan: aNumber
+	^false! !
+
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:58:18'!
+multiplyWith: aNumber
+	^aNumber.! !
+
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:58:22'!
+next
+	^II.! !
+
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:58:25'!
 previous
-	self error: 'El número I no tiene número previo'! !
+	self error: 'El número I no tiene número previo'.! !
 
 !I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 15:01:00'!
 substractFrom: aNumber
@@ -72,62 +75,63 @@ DenotativeObject subclass: #II
 II class
 	instanceVariableNames: 'next previous'!
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 14:48:09'!
-* otroNumero
-	^otroNumero multiplyWith: self.! !
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:54:56'!
+* aNumber
+	^aNumber multiplyWith: self.! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:29:11'!
-+ otroNumero
-	^self previous + otroNumero next! !
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:58:35'!
++ aNumber
+	^self previous + aNumber next.! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 15:03:36'!
-- otroNumero
-	^otroNumero substractFrom: self.! !
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:55:18'!
+- aNumber
+	^aNumber substractFrom: self.! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'MC 3/26/2018 21:18:33'!
-/ otroNumero
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:27:39'!
+/ aNumber
 	| n |
 	n := I.
-	self <= otroNumero ifTrue: [
-		self = otroNumero ifTrue: [
-			^I
-		] ifFalse: [
-			^Error signal: self descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor 
-		]
+
+	self < aNumber ifTrue: [
+		^Error signal: self descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor 
 	].
-	[n * otroNumero <= self] whileTrue: [
+
+	self = aNumber ifTrue: [
+		^I
+	].
+
+	[n * aNumber < self] whileTrue: [
 		n := n+I
 	].
-	
-	"restamos uno porque tuvimos que pasarnos"
-	(n - I) * otroNumero = self
-		ifTrue: [ ^(n - I) ]
-		ifFalse: [ Error signal: 'División no entera' ].! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'MC 3/26/2018 21:12:56'!
-<= otroNumero
-	"el I no tiene previous, entonces tenemos que chequearlo primero"
-	otroNumero = I ifTrue: [
-		^false
+	n * aNumber = self ifTrue: [
+		^n
 	] ifFalse: [
-		^ self previous <= otroNumero previous
-	]! !
+		^Error signal: 'División no entera'
+	].! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'MC 3/26/2018 20:31:40'!
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:15:28'!
+< aNumber
+	^ aNumber greaterThan: self.! !
+
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:58:48'!
 descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor
-	^'No se puede dividir por un número mayor o igual a él'! !
+	^'No se puede dividir por un número mayor o igual a él'.! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 14:31:22'!
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:18:04'!
+greaterThan: aNumber
+	^aNumber previous < self previous! !
+
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:59:05'!
 multiplyWith: aNumber
+	^self + (self * aNumber previous).! !
 
-	^self + (self * (aNumber previous)).! !
-
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:33:10'!
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:59:21'!
 next
 	next ifNil: [
 		next := (self cloneNamed: (self name, 'I')) previous: self.
 	].
-	^next! !
+	^next.! !
 
 !II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 14:55:11'!
 previous
@@ -136,9 +140,9 @@ previous
 	].
 	^previous.! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:33:33'!
-previous: numeroPrevio
-	previous := numeroPrevio! !
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:59:27'!
+previous: aNumber
+	previous := aNumber.! !
 
 !II class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:47:13'!
 removeAllNext
@@ -153,5 +157,201 @@ substractFrom: aNumber
 	^self previous substractFrom: aNumber previous.
 ! !
 
-II instVarNamed: 'next' put: nil!
-II instVarNamed: 'previous' put: nil!
+II instVarNamed: 'next' put: III!
+II instVarNamed: 'previous' put: I!
+
+!classDefinition: #III category: #Peano!
+DenotativeObject subclass: #III
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Peano'!
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'III class' category: #Peano!
+III class
+	instanceVariableNames: 'next previous'!
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+* aNumber
+	^aNumber multiplyWith: self.! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
++ aNumber
+	^self previous + aNumber next.! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+- aNumber
+	^aNumber substractFrom: self.! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+/ aNumber
+	| n |
+	n := I.
+
+	self < aNumber ifTrue: [
+		^Error signal: self descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor 
+	].
+
+	self = aNumber ifTrue: [
+		^I
+	].
+
+	[n * aNumber < self] whileTrue: [
+		n := n+I
+	].
+
+	n * aNumber = self ifTrue: [
+		^n
+	] ifFalse: [
+		^Error signal: 'División no entera'
+	].! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+< aNumber
+	^ aNumber greaterThan: self.! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor
+	^'No se puede dividir por un número mayor o igual a él'.! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+greaterThan: aNumber
+	^aNumber previous < self previous! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+multiplyWith: aNumber
+	^self + (self * aNumber previous).! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+next
+	next ifNil: [
+		next := (self cloneNamed: (self name, 'I')) previous: self.
+	].
+	^next.! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+previous
+	previous ifNil: [
+		self previous: I
+	].
+	^previous.! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+previous: aNumber
+	previous := aNumber.! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+removeAllNext
+	next ifNotNil: [
+		next removeAllNext.
+		next removeFromSystem.
+		next := nil.
+	]! !
+
+!III class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+substractFrom: aNumber
+	^self previous substractFrom: aNumber previous.
+! !
+
+III instVarNamed: 'next' put: IIII!
+III instVarNamed: 'previous' put: II!
+
+!classDefinition: #IIII category: #Peano!
+DenotativeObject subclass: #IIII
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Peano'!
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'IIII class' category: #Peano!
+IIII class
+	instanceVariableNames: 'next previous'!
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+* aNumber
+	^aNumber multiplyWith: self.! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
++ aNumber
+	^self previous + aNumber next.! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+- aNumber
+	^aNumber substractFrom: self.! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+/ aNumber
+	| n |
+	n := I.
+
+	self < aNumber ifTrue: [
+		^Error signal: self descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor 
+	].
+
+	self = aNumber ifTrue: [
+		^I
+	].
+
+	[n * aNumber < self] whileTrue: [
+		n := n+I
+	].
+
+	n * aNumber = self ifTrue: [
+		^n
+	] ifFalse: [
+		^Error signal: 'División no entera'
+	].! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+< aNumber
+	^ aNumber greaterThan: self.! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor
+	^'No se puede dividir por un número mayor o igual a él'.! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+greaterThan: aNumber
+	^aNumber previous < self previous! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+multiplyWith: aNumber
+	^self + (self * aNumber previous).! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+next
+	next ifNil: [
+		next := (self cloneNamed: (self name, 'I')) previous: self.
+	].
+	^next.! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+previous
+	previous ifNil: [
+		self previous: I
+	].
+	^previous.! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+previous: aNumber
+	previous := aNumber.! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+removeAllNext
+	next ifNotNil: [
+		next removeAllNext.
+		next removeFromSystem.
+		next := nil.
+	]! !
+
+!IIII class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:33:44'!
+substractFrom: aNumber
+	^self previous substractFrom: aNumber previous.
+! !
+
+IIII instVarNamed: 'next' put: nil!
+IIII instVarNamed: 'previous' put: III!
