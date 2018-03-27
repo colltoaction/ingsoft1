@@ -41,6 +41,11 @@ descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor
 descripcionDeErrorDeNumerosNegativosNoSoportados
 	^'No se puede restar a un número con otro mayor o igual a él'! !
 
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 14:24:54'!
+multiplyWith: aNumber
+
+	^aNumber.! !
+
 !I class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 20:58:54'!
 next
 	^II! !
@@ -48,6 +53,10 @@ next
 !I class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:05:30'!
 previous
 	self error: 'El número I no tiene número previo'! !
+
+!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 15:01:00'!
+substractFrom: aNumber
+	^aNumber previous.! !
 
 
 !classDefinition: #II category: #Peano!
@@ -63,25 +72,17 @@ DenotativeObject subclass: #II
 II class
 	instanceVariableNames: 'next previous'!
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:54:33'!
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 14:48:09'!
 * otroNumero
-	otroNumero = I ifTrue: [
-		^self.
-	] ifFalse: [
-		^self + (self * (otroNumero - I))
-	].! !
+	^otroNumero multiplyWith: self.! !
 
 !II class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:29:11'!
 + otroNumero
 	^self previous + otroNumero next! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:43:26'!
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 15:03:36'!
 - otroNumero
-	otroNumero = I ifTrue: [
-		^self previous
-	] ifFalse: [
-		^self previous - otroNumero previous
-	]! !
+	^otroNumero substractFrom: self.! !
 
 !II class methodsFor: 'as yet unclassified' stamp: 'MC 3/26/2018 21:18:33'!
 / otroNumero
@@ -116,6 +117,11 @@ II class
 descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor
 	^'No se puede dividir por un número mayor o igual a él'! !
 
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 14:31:22'!
+multiplyWith: aNumber
+
+	^self + (self * (aNumber previous)).! !
+
 !II class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:33:10'!
 next
 	next ifNil: [
@@ -123,12 +129,12 @@ next
 	].
 	^next! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:37:47'!
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 14:55:11'!
 previous
-	| previo |
-	previo := previous.
-	previo ifNil: [previo := I].
-	^previo! !
+	previous ifNil: [
+		self previous: I
+	].
+	^previous.! !
 
 !II class methodsFor: 'as yet unclassified' stamp: 'JA 3/22/2018 21:33:33'!
 previous: numeroPrevio
@@ -141,6 +147,11 @@ removeAllNext
 		next removeFromSystem.
 		next := nil.
 	]! !
+
+!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 15:05:09'!
+substractFrom: aNumber
+	^self previous substractFrom: aNumber previous.
+! !
 
 II instVarNamed: 'next' put: nil!
 II instVarNamed: 'previous' put: nil!
