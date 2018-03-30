@@ -87,17 +87,13 @@ II class
 - aNumber
 	^aNumber substractFrom: self.! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'MC 3/30/2018 16:54:33'!
+!II class methodsFor: 'as yet unclassified' stamp: 'MC 3/30/2018 16:58:18'!
 / aNumber
 	| n |
 	n := I.
 
 	self < aNumber ifTrue: [
 		^Error signal: self descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor 
-	].
-
-	self = aNumber ifTrue: [
-		^I
 	].
 
 	[n * aNumber < self] whileTrue: [
