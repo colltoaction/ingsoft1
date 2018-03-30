@@ -87,7 +87,7 @@ II class
 - aNumber
 	^aNumber substractFrom: self.! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:27:39'!
+!II class methodsFor: 'as yet unclassified' stamp: 'MC 3/30/2018 16:54:33'!
 / aNumber
 	| n |
 	n := I.
@@ -104,11 +104,7 @@ II class
 		n := n+I
 	].
 
-	n * aNumber = self ifTrue: [
-		^n
-	] ifFalse: [
-		^Error signal: 'División no entera'
-	].! !
+	^n! !
 
 !II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:15:28'!
 < aNumber
