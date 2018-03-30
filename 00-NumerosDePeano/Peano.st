@@ -41,9 +41,9 @@ descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor
 descripcionDeErrorDeNumerosNegativosNoSoportados
 	^'No se puede restar a un número con otro mayor o igual a él'.! !
 
-!I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:16:42'!
-greaterThan: aNumber
-	^false! !
+!I class methodsFor: 'as yet unclassified' stamp: 'MC 3/30/2018 17:15:39'!
+greaterThanOrEqual: aNumber
+	^self = aNumber.! !
 
 !I class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:58:18'!
 multiplyWith: aNumber
@@ -102,16 +102,17 @@ II class
 
 	^n! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:15:28'!
+!II class methodsFor: 'as yet unclassified' stamp: 'MC 3/30/2018 17:17:46'!
 < aNumber
-	^ aNumber greaterThan: self.! !
+	"Double dispatch para que use la implementación del I si es que aNumber lo es"
+	^ aNumber greaterThanOrEqual: self.! !
 
 !II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:58:48'!
 descripcionDeErrorDeNoSePuedeDividirPorUnNumeroMayor
 	^'No se puede dividir por un número mayor o igual a él'.! !
 
-!II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 20:18:04'!
-greaterThan: aNumber
+!II class methodsFor: 'as yet unclassified' stamp: 'MC 3/30/2018 17:24:26'!
+greaterThanOrEqual: aNumber
 	^aNumber previous < self previous! !
 
 !II class methodsFor: 'as yet unclassified' stamp: 'JA 3/27/2018 19:59:05'!
