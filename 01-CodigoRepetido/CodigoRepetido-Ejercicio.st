@@ -8,74 +8,87 @@ Error subclass: #NotFound
 
 !classDefinition: #IdiomTest category: #'CodigoRepetido-Ejercicio'!
 TestCase subclass: #IdiomTest
+	instanceVariableNames: 'customerBook'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'CodigoRepetido-Ejercicio'!
+
+!IdiomTest methodsFor: 'testing' stamp: 'JA 4/12/2018 20:01:03'!
+setUp
+	customerBook := CustomerBook  new.! !
+
+
+!classDefinition: #ErrorTests category: #'CodigoRepetido-Ejercicio'!
+IdiomTest subclass: #ErrorTests
 	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'CodigoRepetido-Ejercicio'!
 
-!IdiomTest methodsFor: 'testing' stamp: 'HAW 4/14/2017 16:56:37'!
-test01AddingCustomerShouldNotTakeMoreThan50Milliseconds
-
-	| customerBook millisecondsBeforeRunning millisecondsAfterRunning |
-	
-	customerBook := CustomerBook  new.
-	
-	millisecondsBeforeRunning := Time millisecondClockValue.
-	customerBook addCustomerNamed: 'John Lennon'.
-	millisecondsAfterRunning := Time millisecondClockValue.
-	
-	self assert: (millisecondsAfterRunning-millisecondsBeforeRunning) < 50 
-	
-! !
-
-!IdiomTest methodsFor: 'testing' stamp: 'HernanWilkinson 4/11/2016 20:29'!
-test02RemovingCustomerShouldNotTakeMoreThan100Milliseconds
-
-	| customerBook millisecondsBeforeRunning millisecondsAfterRunning paulMcCartney |
-	
-	customerBook := CustomerBook  new.
-	paulMcCartney := 'Paul McCartney'.
-	
-	customerBook addCustomerNamed: paulMcCartney.
-	  
-	millisecondsBeforeRunning := Time millisecondClockValue.
-	customerBook removeCustomerNamed: paulMcCartney.
-	millisecondsAfterRunning := Time millisecondClockValue.
-	
-	self assert: (millisecondsAfterRunning-millisecondsBeforeRunning) < 100 
-	
-! !
-
-!IdiomTest methodsFor: 'testing' stamp: 'HernanWilkinson 5/9/2012 18:12'!
-test03CanNotAddACustomerWithEmptyName 
-
-	| customerBook |
-			
-	customerBook := CustomerBook new.
-
-	[ customerBook addCustomerNamed: ''.
+!ErrorTests methodsFor: 'testing' stamp: 'JA 4/12/2018 21:11:40'!
+should: aBlockClosure failWithError: error andAssert: assertionsClosure
+	[ aBlockClosure value.
 	self fail ]
-		on: Error 
-		do: [ :anError | 
-			self assert: anError messageText = CustomerBook customerCanNotBeEmptyErrorMessage.
-			self assert: customerBook isEmpty ]! !
+		on: error
+		do: [ :anError | assertionsClosure value: anError]! !
 
-!IdiomTest methodsFor: 'testing' stamp: 'HAW 8/28/2017 08:57:25'!
-test04CanNotRemoveAnInvalidCustomer
-	
-	| customerBook johnLennon |
-			
-	customerBook := CustomerBook new.
-	johnLennon := 'John Lennon'.
-	customerBook addCustomerNamed: johnLennon.
-	
-	[ customerBook removeCustomerNamed: 'Paul McCartney'.
-	self fail ]
-		on: NotFound 
-		do: [ :anError | 
+!ErrorTests methodsFor: 'testing' stamp: 'JA 4/12/2018 21:13:12'!
+test03CanNotAddACustomerWithEmptyName
+	self
+		should: [customerBook addCustomerNamed: '']
+		failWithError: Error
+		andAssert: [:error | 
+			self assert: error messageText = CustomerBook customerCanNotBeEmptyErrorMessage.
+			self assert: customerBook isEmpty].! !
+
+!ErrorTests methodsFor: 'testing' stamp: 'JA 4/12/2018 21:15:01'!
+test04CanNotRemoveAnInvalidCustomer	
+	| name |
+
+	name := 'John Lennon'.
+	customerBook addCustomerNamed: name.
+		
+	self
+		should: [customerBook removeCustomerNamed: 'Paul McCartney']
+		failWithError: NotFound
+		andAssert: [:error | 
 			self assert: customerBook numberOfCustomers = 1.
-			self assert: (customerBook includesCustomerNamed: johnLennon) ]
-! !
+			self assert: (customerBook includesCustomerNamed: name)].! !
+
+
+!classDefinition: #TimeTests category: #'CodigoRepetido-Ejercicio'!
+IdiomTest subclass: #TimeTests
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'CodigoRepetido-Ejercicio'!
+
+!TimeTests methodsFor: 'testing' stamp: 'JA 4/12/2018 21:02:25'!
+assertThat: aBlockClosure shouldTakeLessThanMilliseconds: time
+	| millisecondsSpent |
+	millisecondsSpent := self millisecondsSpentToRun: aBlockClosure value.
+	self assert: millisecondsSpent < time.! !
+
+!TimeTests methodsFor: 'testing' stamp: 'JA 4/12/2018 20:59:43'!
+millisecondsSpentToRun: aBlockClosure
+	| millisecondsBeforeRunning millisecondsAfterRunning |
+	
+	millisecondsBeforeRunning := Time millisecondClockValue.
+	aBlockClosure value.
+	millisecondsAfterRunning := Time millisecondClockValue.
+	
+	^(millisecondsAfterRunning-millisecondsBeforeRunning)! !
+
+!TimeTests methodsFor: 'testing' stamp: 'JA 4/12/2018 21:02:53'!
+test01AddingCustomerShouldNotTakeMoreThan50Milliseconds
+	self assertThat: [customerBook addCustomerNamed: 'John Lennon'] shouldTakeLessThanMilliseconds: 50.! !
+
+!TimeTests methodsFor: 'testing' stamp: 'JA 4/12/2018 21:03:07'!
+test02RemovingCustomerShouldNotTakeMoreThan100Milliseconds
+	| name |
+	name := 'Paul McCartney'.
+	customerBook addCustomerNamed: name.
+	self assertThat: [customerBook removeCustomerNamed: name] shouldTakeLessThanMilliseconds: 100.! !
 
 
 !classDefinition: #CustomerBook category: #'CodigoRepetido-Ejercicio'!
