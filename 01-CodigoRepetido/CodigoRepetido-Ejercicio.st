@@ -116,11 +116,11 @@ initialize
 	customers := OrderedCollection new! !
 
 
-!CustomerBook methodsFor: 'customer management' stamp: 'HernanWilkinson 7/6/2011 17:42'!
+!CustomerBook methodsFor: 'customer management' stamp: 'MC 4/16/2018 17:16:37'!
 addCustomerNamed: aName
 
 	aName isEmpty ifTrue: [ self signalCustomerNameCannotBeEmpty ].
-	(customers includes: aName) ifTrue: [ self signalCustomerAlreadyExists ].
+	(self includesCustomerNamed: aName) ifTrue: [ self signalCustomerAlreadyExists ].
 	
 	customers add: aName ! !
 
