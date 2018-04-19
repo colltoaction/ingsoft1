@@ -137,6 +137,96 @@ test10CanNotTopWhenThereAreNoObjectsInTheStack
 ! !
 
 
+!classDefinition: #OOAbstractStack category: #'Stack-Exercise'!
+Object subclass: #OOAbstractStack
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Stack-Exercise'!
+
+!OOAbstractStack methodsFor: 'inspecting' stamp: 'MC 4/16/2018 19:22:38'!
+isEmpty
+	self subclassResponsibility .! !
+
+!OOAbstractStack methodsFor: 'inspecting' stamp: 'MC 4/16/2018 19:35:47'!
+next
+	self subclassResponsibility .! !
+
+!OOAbstractStack methodsFor: 'inspecting' stamp: 'MC 4/16/2018 19:24:49'!
+size
+	self subclassResponsibility .! !
+
+!OOAbstractStack methodsFor: 'inspecting' stamp: 'MC 4/16/2018 19:36:05'!
+value
+	self subclassResponsibility .! !
+
+
+!classDefinition: #OOEmptyStack category: #'Stack-Exercise'!
+OOAbstractStack subclass: #OOEmptyStack
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Stack-Exercise'!
+
+!OOEmptyStack methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:15'!
+isEmpty
+	^true .! !
+
+!OOEmptyStack methodsFor: 'inspecting' stamp: 'JA 4/19/2018 18:53:05'!
+next
+	self error: (OOStack stackEmptyErrorDescription)! !
+
+!OOEmptyStack methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:18'!
+size
+	^0 .! !
+
+!OOEmptyStack methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:21'!
+value
+	self error: (OOStack stackEmptyErrorDescription) .! !
+
+
+!classDefinition: #OOStackWithElements category: #'Stack-Exercise'!
+OOAbstractStack subclass: #OOStackWithElements
+	instanceVariableNames: 'next value'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Stack-Exercise'!
+
+!OOStackWithElements methodsFor: 'initializing' stamp: 'MC 4/16/2018 20:12:47'!
+initializeValue: aValue initializeNext: aNode
+	value := aValue .
+	next := aNode .! !
+
+
+!OOStackWithElements methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:04'!
+isEmpty
+	^false .! !
+
+!OOStackWithElements methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:01'!
+next
+	^next .! !
+
+!OOStackWithElements methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:12:57'!
+size
+	^1 + (next size) .! !
+
+!OOStackWithElements methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:12:54'!
+value
+	^value .! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'OOStackWithElements class' category: #'Stack-Exercise'!
+OOStackWithElements class
+	instanceVariableNames: ''!
+
+!OOStackWithElements class methodsFor: 'constructing' stamp: 'MC 4/16/2018 19:20:49'!
+withValue: aValue withNext: aNode
+	^self new
+		initializeValue: aValue
+		initializeNext: aNode.! !
+
+
 !classDefinition: #OOStack category: #'Stack-Exercise'!
 Object subclass: #OOStack
 	instanceVariableNames: 'head'
@@ -144,7 +234,7 @@ Object subclass: #OOStack
 	poolDictionaries: ''
 	category: 'Stack-Exercise'!
 !OOStack commentStamp: '<historical>' prior: 0!
-This is the empty stack for now, but we might want to change some names!
+!
 
 
 !OOStack methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:37'!
@@ -167,15 +257,17 @@ pop
 	head := head next .
 	^top .! !
 
-!OOStack methodsFor: 'updating' stamp: 'MC 4/16/2018 20:13:53'!
+!OOStack methodsFor: 'updating' stamp: 'JA 4/19/2018 18:59:10'!
 push: aValue
-	head := OOStackNode withValue: aValue withNext: head .! !
+	head _ OOStackWithElements
+		withValue: aValue
+		withNext: head.! !
 
 
-!OOStack methodsFor: 'constructing' stamp: 'MC 4/16/2018 20:13:30'!
+!OOStack methodsFor: 'constructing' stamp: 'JA 4/19/2018 18:58:40'!
 initialize
 	"Initialize a stack with the head value. We use an OOStackEmptyNode which follows the Null Object Pattern"
-	head := OOStackEmptyNode new .! !
+	head _ OOEmptyStack new.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -187,89 +279,3 @@ OOStack class
 stackEmptyErrorDescription
 	
 	^ 'Stack is empty'! !
-
-
-!classDefinition: #OOStackAbstractNode category: #'Stack-Exercise'!
-Object subclass: #OOStackAbstractNode
-	instanceVariableNames: ''
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Stack-Exercise'!
-
-!OOStackAbstractNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 19:22:38'!
-isEmpty
-	self subclassResponsibility .! !
-
-!OOStackAbstractNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 19:35:47'!
-next
-	self subclassResponsibility .! !
-
-!OOStackAbstractNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 19:24:49'!
-size
-	self subclassResponsibility .! !
-
-!OOStackAbstractNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 19:36:05'!
-value
-	self subclassResponsibility .! !
-
-
-!classDefinition: #OOStackEmptyNode category: #'Stack-Exercise'!
-OOStackAbstractNode subclass: #OOStackEmptyNode
-	instanceVariableNames: ''
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Stack-Exercise'!
-
-!OOStackEmptyNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:15'!
-isEmpty
-	^true .! !
-
-!OOStackEmptyNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:18'!
-size
-	^0 .! !
-
-!OOStackEmptyNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:21'!
-value
-	self error: (OOStack stackEmptyErrorDescription) .! !
-
-
-!classDefinition: #OOStackNode category: #'Stack-Exercise'!
-OOStackAbstractNode subclass: #OOStackNode
-	instanceVariableNames: 'next value'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Stack-Exercise'!
-
-!OOStackNode methodsFor: 'initializing' stamp: 'MC 4/16/2018 20:12:47'!
-initializeValue: aValue initializeNext: aNode
-	value := aValue .
-	next := aNode .! !
-
-
-!OOStackNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:04'!
-isEmpty
-	^false .! !
-
-!OOStackNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:13:01'!
-next
-	^next .! !
-
-!OOStackNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:12:57'!
-size
-	^1 + (next size) .! !
-
-!OOStackNode methodsFor: 'inspecting' stamp: 'MC 4/16/2018 20:12:54'!
-value
-	^value .! !
-
-"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
-
-!classDefinition: 'OOStackNode class' category: #'Stack-Exercise'!
-OOStackNode class
-	instanceVariableNames: ''!
-
-!OOStackNode class methodsFor: 'constructing' stamp: 'MC 4/16/2018 19:20:49'!
-withValue: aValue withNext: aNode
-	^self new
-		initializeValue: aValue
-		initializeNext: aNode.! !
