@@ -414,25 +414,10 @@ balance
 	^accounts inject: 0 into: [:balance :account | balance + account balance]! !
 
 
-!Portfolio methodsFor: 'testing' stamp: 'JA 5/8/2018 23:32:50'!
-managedBy: aPortfolio
-
-	^aPortfolio managesPortfolio: self! !
-
-!Portfolio methodsFor: 'testing' stamp: 'JA 5/8/2018 23:32:57'!
+!Portfolio methodsFor: 'testing' stamp: 'JA 5/9/2018 14:05:23'!
 manages: anAccount
 
-	^anAccount managedBy: self! !
-
-!Portfolio methodsFor: 'testing' stamp: 'JA 5/8/2018 23:32:36'!
-managesPortfolio: aPortfolio
-
-	^accounts includes: aPortfolio! !
-
-!Portfolio methodsFor: 'testing' stamp: 'JA 5/8/2018 23:32:43'!
-managesReceptiveAccount: aReceptiveAccount
-
-	^accounts anySatisfy: [:account | account manages: aReceptiveAccount]! !
+	^anAccount = self or: [accounts anySatisfy: [:account | account manages: anAccount]]! !
 
 !Portfolio methodsFor: 'testing' stamp: 'JA 5/8/2018 21:27:59'!
 registers: aTransaction
@@ -482,19 +467,16 @@ with: anAccount1 with: anAccount2
 
 	^self withAll: (Bag with: anAccount1 with: anAccount2)! !
 
-!Portfolio class methodsFor: 'instance creation' stamp: 'JA 5/9/2018 00:18:49'!
+!Portfolio class methodsFor: 'instance creation' stamp: 'JA 5/9/2018 14:17:45'!
 withAll: aCollectionOfAccounts
 
-	((aCollectionOfAccounts size ~= aCollectionOfAccounts asSet size) or:
-	(aCollectionOfAccounts anySatisfy: [:account |
-		aCollectionOfAccounts anySatisfy: [:anotherAccount |
-			(anotherAccount manages: account) and: (account ~= anotherAccount)
+	aCollectionOfAccounts asOrderedCollection groupsOf: 2 atATimeDo: [:anAccount :anotherAccount |
+		((anAccount manages: anotherAccount) or: (anotherAccount manages: anAccount)) ifTrue: [
+			Error new signal: self accountAlreadyManagedErrorMessage
 		]
-	])) ifTrue: [
-		Error new signal: self accountAlreadyManagedErrorMessage
-	] ifFalse: [
-		^self new withAccounts: aCollectionOfAccounts
-	]! !
+	].
+	
+	^self new withAccounts: aCollectionOfAccounts! !
 
 
 !classDefinition: #ReceptiveAccount category: #'Portfolio-Ejercicio'!
@@ -529,10 +511,6 @@ balance
 	^ transactions inject: 0 into: [ :balance :transaction | balance + transaction value ]
 ! !
 
-
-!ReceptiveAccount methodsFor: 'testing' stamp: 'JA 5/8/2018 23:31:16'!
-managedBy: aPortfolio
-	^aPortfolio managesReceptiveAccount: self.! !
 
 !ReceptiveAccount methodsFor: 'testing' stamp: 'HernanWilkinson 7/13/2011 18:37'!
 manages: anAccount
