@@ -403,38 +403,62 @@ balance
 
 !classDefinition: #Portfolio category: #'Portfolio-Ejercicio'!
 SummarizingAccount subclass: #Portfolio
-	instanceVariableNames: ''
+	instanceVariableNames: 'accounts'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Portfolio-Ejercicio'!
 
-!Portfolio methodsFor: 'balance' stamp: 'HernanWilkinson 7/13/2011 18:39'!
+!Portfolio methodsFor: 'balance' stamp: 'JA 5/8/2018 21:28:09'!
 balance
 
-	self shouldBeImplemented ! !
+	^accounts inject: 0 into: [:balance :account | balance + account balance]! !
 
 
-!Portfolio methodsFor: 'testing' stamp: 'HernanWilkinson 7/13/2011 18:39'!
+!Portfolio methodsFor: 'testing' stamp: 'JA 5/8/2018 23:32:50'!
+managedBy: aPortfolio
+
+	^aPortfolio managesPortfolio: self! !
+
+!Portfolio methodsFor: 'testing' stamp: 'JA 5/8/2018 23:32:57'!
 manages: anAccount
 
-		self shouldBeImplemented 
-! !
+	^anAccount managedBy: self! !
 
-!Portfolio methodsFor: 'testing' stamp: 'HernanWilkinson 7/13/2011 18:39'!
-registers: aTtransaction
+!Portfolio methodsFor: 'testing' stamp: 'JA 5/8/2018 23:32:36'!
+managesPortfolio: aPortfolio
 
-	self shouldBeImplemented ! !
+	^accounts includes: aPortfolio! !
+
+!Portfolio methodsFor: 'testing' stamp: 'JA 5/8/2018 23:32:43'!
+managesReceptiveAccount: aReceptiveAccount
+
+	^accounts anySatisfy: [:account | account manages: aReceptiveAccount]! !
+
+!Portfolio methodsFor: 'testing' stamp: 'JA 5/8/2018 21:27:59'!
+registers: aTransaction
+
+	^accounts anySatisfy: [:account | account registers: aTransaction]! !
 
 
-!Portfolio methodsFor: 'transactions' stamp: 'HernanWilkinson 7/13/2011 18:39'!
+!Portfolio methodsFor: 'transactions' stamp: 'JA 5/8/2018 22:10:05'!
 transactions 
 
-	self shouldBeImplemented ! !
+	^(accounts collect: [:account | self transactionsOf: account]) asOrderedCollection concatenation! !
 
-!Portfolio methodsFor: 'transactions' stamp: 'HernanWilkinson 7/13/2011 18:40'!
+!Portfolio methodsFor: 'transactions' stamp: 'JA 5/8/2018 23:38:36'!
 transactionsOf: anAccount 
 
-	self shouldBeImplemented ! !
+	(self manages: anAccount) ifTrue: [
+		^anAccount transactions
+	] ifFalse: [
+		Error new signal: self class accountNotManagedMessageDescription
+	]! !
+
+
+!Portfolio methodsFor: 'initialization' stamp: 'JA 5/8/2018 21:14:07'!
+withAccounts: accountCollection
+
+	accounts := accountCollection! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -442,15 +466,35 @@ transactionsOf: anAccount
 Portfolio class
 	instanceVariableNames: ''!
 
-!Portfolio class methodsFor: 'instance creation' stamp: 'HernanWilkinson 7/13/2011 18:41'!
+!Portfolio class methodsFor: 'error' stamp: 'JA 5/9/2018 00:04:12'!
+accountAlreadyManagedErrorMessage
+	
+	^'Cannot create Portfolio with duplicate accounts.'! !
+
+!Portfolio class methodsFor: 'error' stamp: 'JA 5/8/2018 23:37:44'!
+accountNotManagedMessageDescription
+
+	^'Portfolio does not manage account.'! !
+
+
+!Portfolio class methodsFor: 'instance creation' stamp: 'JA 5/9/2018 00:11:17'!
 with: anAccount1 with: anAccount2
 
-	self shouldBeImplemented ! !
+	^self withAll: (Bag with: anAccount1 with: anAccount2)! !
 
-!Portfolio class methodsFor: 'instance creation' stamp: 'HernanWilkinson 7/13/2011 18:41'!
+!Portfolio class methodsFor: 'instance creation' stamp: 'JA 5/9/2018 00:18:49'!
 withAll: aCollectionOfAccounts
 
-	self shouldBeImplemented ! !
+	((aCollectionOfAccounts size ~= aCollectionOfAccounts asSet size) or:
+	(aCollectionOfAccounts anySatisfy: [:account |
+		aCollectionOfAccounts anySatisfy: [:anotherAccount |
+			(anotherAccount manages: account) and: (account ~= anotherAccount)
+		]
+	])) ifTrue: [
+		Error new signal: self accountAlreadyManagedErrorMessage
+	] ifFalse: [
+		^self new withAccounts: aCollectionOfAccounts
+	]! !
 
 
 !classDefinition: #ReceptiveAccount category: #'Portfolio-Ejercicio'!
@@ -485,6 +529,10 @@ balance
 	^ transactions inject: 0 into: [ :balance :transaction | balance + transaction value ]
 ! !
 
+
+!ReceptiveAccount methodsFor: 'testing' stamp: 'JA 5/8/2018 23:31:16'!
+managedBy: aPortfolio
+	^aPortfolio managesReceptiveAccount: self.! !
 
 !ReceptiveAccount methodsFor: 'testing' stamp: 'HernanWilkinson 7/13/2011 18:37'!
 manages: anAccount
