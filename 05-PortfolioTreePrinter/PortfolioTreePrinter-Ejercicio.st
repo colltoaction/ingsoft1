@@ -638,27 +638,9 @@ Object subclass: #AccountSummary
 	poolDictionaries: ''
 	category: 'PortfolioTreePrinter-Ejercicio'!
 
-!AccountSummary methodsFor: 'execution' stamp: 'JA 5/16/2018 00:16:56'!
+!AccountSummary methodsFor: 'execution' stamp: 'MC 5/16/2018 10:13:08'!
 value
-	"TODO: Asi como esta no anda, resolver"
-	"TODO: sacar ifs, pero no como lo habia hecho antes :P"
-	^account transactions collect: [:transaction | 
-		(transaction isKindOf: Deposit) ifTrue: [
-			'Deposito por ', transaction value asString
-		].
-		(transaction isKindOf: Withdraw) ifTrue: [
-			'Extraccion por ', transaction value asString
-		].
-		(transaction isKindOf: TransferDeposit) ifTrue: [
-			'Transferencia por ', transaction value asString
-		].
-		(transaction isKindOf: TransferWithdraw) ifTrue: [
-			'Transferencia por ', transaction value asString
-		].
-		(transaction isKindOf: CertificateOfDeposit) ifTrue: [
-			'Plazo fijo por ', transaction value asString, ' durante ', transaction numberOfDays asString, ' dias a una tna de ', (transaction tna * 100) asString, '%'
-		].
-	].! !
+	^account transactions collect: [:transaction | transaction summary].! !
 
 
 !AccountSummary methodsFor: 'initialization' stamp: 'JA 5/15/2018 19:18:16'!
@@ -692,6 +674,12 @@ balance
 
 !AccountTransaction methodsFor: 'evaluating' stamp: 'JA 5/15/2018 20:45:49'!
 value
+
+	self subclassResponsibility.! !
+
+
+!AccountTransaction methodsFor: 'printing' stamp: 'MC 5/16/2018 10:05:33'!
+summary
 
 	self subclassResponsibility.! !
 
@@ -757,6 +745,11 @@ value
 
 	^value.! !
 
+
+!CertificateOfDeposit methodsFor: 'printing' stamp: 'MC 5/16/2018 10:12:53'!
+summary
+	^'Plazo fijo por ', value asString, ' durante ', numberOfDays asString, ' dias a una tna de ', (tna * 100) asString, '%'! !
+
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 !classDefinition: 'CertificateOfDeposit class' category: #'PortfolioTreePrinter-Ejercicio'!
@@ -801,6 +794,11 @@ balance
 value
 
 	^value.! !
+
+
+!Deposit methodsFor: 'printing' stamp: 'MC 5/16/2018 10:08:26'!
+summary
+	^'Deposito por ', value asString! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -853,6 +851,11 @@ value
 
 	^correspondingTransfer value.! !
 
+
+!TransferDeposit methodsFor: 'printing' stamp: 'MC 5/16/2018 10:12:10'!
+summary
+	^'Transferencia por 100'! !
+
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 !classDefinition: 'TransferDeposit class' category: #'PortfolioTreePrinter-Ejercicio'!
@@ -894,6 +897,11 @@ value
 
 	^correspondingTransfer value.! !
 
+
+!TransferWithdraw methodsFor: 'printing' stamp: 'MC 5/16/2018 10:10:30'!
+summary
+	^'Transferencia por -100'! !
+
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 !classDefinition: 'TransferWithdraw class' category: #'PortfolioTreePrinter-Ejercicio'!
@@ -928,6 +936,11 @@ balance
 value
 
 	^value.! !
+
+
+!Withdraw methodsFor: 'printing' stamp: 'MC 5/16/2018 10:09:14'!
+summary
+	^'Extraccion por ', value asString.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
