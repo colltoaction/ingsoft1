@@ -746,9 +746,10 @@ value
 	^value.! !
 
 
-!CertificateOfDeposit methodsFor: 'printing' stamp: 'MC 5/16/2018 10:12:53'!
+!CertificateOfDeposit methodsFor: 'printing' stamp: 'JA 5/16/2018 17:23:19'!
 summary
-	^'Plazo fijo por ', value asString, ' durante ', numberOfDays asString, ' dias a una tna de ', (tna * 100) asString, '%'! !
+
+	^'Plazo fijo por ', value asString, ' durante ', numberOfDays asString, ' dias a una tna de ', (tna * 100) asString, '%'.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -796,9 +797,10 @@ value
 	^value.! !
 
 
-!Deposit methodsFor: 'printing' stamp: 'MC 5/16/2018 10:08:26'!
+!Deposit methodsFor: 'printing' stamp: 'JA 5/16/2018 17:23:10'!
 summary
-	^'Deposito por ', value asString! !
+
+	^'Deposito por ', value asString.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -852,9 +854,10 @@ value
 	^correspondingTransfer value.! !
 
 
-!TransferDeposit methodsFor: 'printing' stamp: 'MC 5/16/2018 10:12:10'!
+!TransferDeposit methodsFor: 'printing' stamp: 'JA 5/16/2018 17:23:03'!
 summary
-	^'Transferencia por 100'! !
+
+	^'Transferencia por ', correspondingTransfer value asString.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -898,9 +901,10 @@ value
 	^correspondingTransfer value.! !
 
 
-!TransferWithdraw methodsFor: 'printing' stamp: 'MC 5/16/2018 10:10:30'!
+!TransferWithdraw methodsFor: 'printing' stamp: 'JA 5/16/2018 17:22:56'!
 summary
-	^'Transferencia por -100'! !
+
+	^'Transferencia por ', correspondingTransfer value negated asString.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -938,8 +942,9 @@ value
 	^value.! !
 
 
-!Withdraw methodsFor: 'printing' stamp: 'MC 5/16/2018 10:09:14'!
+!Withdraw methodsFor: 'printing' stamp: 'JA 5/16/2018 17:22:48'!
 summary
+
 	^'Extraccion por ', value asString.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
