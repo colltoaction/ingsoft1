@@ -526,15 +526,15 @@ investmentNetOf: aReceptiveAccount
 
 	^(InvestmentNetWorth of: aReceptiveAccount) value.! !
 
-!PortfolioTest methodsFor: 'test support' stamp: 'JA 5/13/2018 02:19:21'!
+!PortfolioTest methodsFor: 'test support' stamp: 'JA 5/16/2018 17:34:07'!
 portofolioTreeOf: aPortfolio namingAccountWith: aDictionary
 
-	^aPortfolio printTreeWithNames: aDictionary.! !
+	^(PortfolioTree of: aPortfolio withNames: aDictionary) value.! !
 
-!PortfolioTest methodsFor: 'test support' stamp: 'JA 5/13/2018 02:57:28'!
+!PortfolioTest methodsFor: 'test support' stamp: 'JA 5/16/2018 19:58:05'!
 reversePortofolioTreeOf: aPortfolio namingAccountWith: aDictionary
 
-	^aPortfolio printReversedTreeWithNames: aDictionary.! !
+	^(PortfolioTree of: aPortfolio withNames: aDictionary) reverse.! !
 
 
 !classDefinition: #AccountQuery category: #'PortfolioTreePrinter-Ejercicio'!
@@ -550,8 +550,33 @@ transactionsOfType: type
 	^account transactions select: [:transaction | transaction isKindOf: type].! !
 
 
+!AccountQuery methodsFor: 'execution' stamp: 'JA 5/16/2018 19:35:07'!
+ceritificateOfDepositAnswerOf: transaction
+
+	self subclassResponsibility.! !
+
+!AccountQuery methodsFor: 'execution' stamp: 'JA 5/16/2018 19:35:13'!
+depositAnswerOf: transaction
+
+	self subclassResponsibility.! !
+
+!AccountQuery methodsFor: 'execution' stamp: 'JA 5/16/2018 19:35:19'!
+transferDepositAnswerOf: transaction
+
+	self subclassResponsibility.! !
+
+!AccountQuery methodsFor: 'execution' stamp: 'JA 5/16/2018 19:35:24'!
+transferWithdrawAnswerOf: transaction
+
+	self subclassResponsibility.! !
+
 !AccountQuery methodsFor: 'execution' stamp: 'JA 5/15/2018 20:02:56'!
 value
+
+	self subclassResponsibility.! !
+
+!AccountQuery methodsFor: 'execution' stamp: 'JA 5/16/2018 19:35:30'!
+withdrawAnswerOf: transaction
 
 	self subclassResponsibility.! !
 
@@ -593,10 +618,15 @@ InvestmentQuery subclass: #InvestmentEarnings
 	poolDictionaries: ''
 	category: 'PortfolioTreePrinter-Ejercicio'!
 
-!InvestmentEarnings methodsFor: 'execution' stamp: 'JA 5/15/2018 20:33:12'!
+!InvestmentEarnings methodsFor: 'execution' stamp: 'JA 5/16/2018 19:36:07'!
+certificateOfDepositAnswerOf: transaction
+
+	^transaction value * transaction tna / 360 * transaction numberOfDays.! !
+
+!InvestmentEarnings methodsFor: 'execution' stamp: 'JA 5/16/2018 19:27:23'!
 value
 
-	^self certificateOfDepositTransactions inject: 0 into: [:earnings :certificate | earnings + certificate earnings].! !
+	^self certificateOfDepositTransactions inject: 0 into: [:earnings :certificate | earnings + (certificate answerQuery: self)].! !
 
 
 !classDefinition: #InvestmentNetWorth category: #'PortfolioTreePrinter-Ejercicio'!
@@ -606,10 +636,15 @@ InvestmentQuery subclass: #InvestmentNetWorth
 	poolDictionaries: ''
 	category: 'PortfolioTreePrinter-Ejercicio'!
 
-!InvestmentNetWorth methodsFor: 'execution' stamp: 'JA 5/15/2018 20:33:17'!
+!InvestmentNetWorth methodsFor: 'execution' stamp: 'JA 5/16/2018 19:36:18'!
+certificateOfDepositAnswerOf: transaction
+
+	^transaction value.! !
+
+!InvestmentNetWorth methodsFor: 'execution' stamp: 'JA 5/16/2018 19:27:33'!
 value
 
-	^self certificateOfDepositTransactions inject: 0 into: [:netWorth :certificate | netWorth + certificate value].! !
+	^self certificateOfDepositTransactions inject: 0 into: [:netWorth :certificate | netWorth + (certificate answerQuery: self)].! !
 
 
 !classDefinition: #TransfersNetWorth category: #'PortfolioTreePrinter-Ejercicio'!
@@ -619,45 +654,26 @@ AccountQuery subclass: #TransfersNetWorth
 	poolDictionaries: ''
 	category: 'PortfolioTreePrinter-Ejercicio'!
 
-!TransfersNetWorth methodsFor: 'execution' stamp: 'JA 5/15/2018 20:35:04'!
+!TransfersNetWorth methodsFor: 'execution' stamp: 'JA 5/16/2018 19:36:29'!
+transferDepositAnswerOf: transaction
+
+	^transaction transfer value.! !
+
+!TransfersNetWorth methodsFor: 'execution' stamp: 'JA 5/16/2018 19:36:34'!
+transferWithdrawAnswerOf: transaction
+
+	^transaction transfer value negated.! !
+
+!TransfersNetWorth methodsFor: 'execution' stamp: 'JA 5/16/2018 19:27:42'!
 value
 
-	^self transferTransactions inject: 0 into: [:netWorth :transfer | netWorth + transfer balance].! !
+	^self transferTransactions inject: 0 into: [:netWorth :transfer | netWorth + (transfer answerQuery: self)].! !
 
 
 !TransfersNetWorth methodsFor: 'selecting' stamp: 'JA 5/15/2018 20:34:49'!
 transferTransactions
 
 	^(self transactionsOfType: TransferDeposit) union: (self transactionsOfType: TransferWithdraw).! !
-
-
-!classDefinition: #AccountSummary category: #'PortfolioTreePrinter-Ejercicio'!
-Object subclass: #AccountSummary
-	instanceVariableNames: 'account'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'PortfolioTreePrinter-Ejercicio'!
-
-!AccountSummary methodsFor: 'execution' stamp: 'MC 5/16/2018 10:13:08'!
-value
-	^account transactions collect: [:transaction | transaction summary].! !
-
-
-!AccountSummary methodsFor: 'initialization' stamp: 'JA 5/15/2018 19:18:16'!
-withAccount: summaryAccount
-
-	account := summaryAccount.! !
-
-"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
-
-!classDefinition: 'AccountSummary class' category: #'PortfolioTreePrinter-Ejercicio'!
-AccountSummary class
-	instanceVariableNames: ''!
-
-!AccountSummary class methodsFor: 'instance creation' stamp: 'JA 5/15/2018 19:15:14'!
-of: account
-
-	^self new withAccount: account.! !
 
 
 !classDefinition: #AccountTransaction category: #'PortfolioTreePrinter-Ejercicio'!
@@ -678,8 +694,8 @@ value
 	self subclassResponsibility.! !
 
 
-!AccountTransaction methodsFor: 'printing' stamp: 'MC 5/16/2018 10:05:33'!
-summary
+!AccountTransaction methodsFor: 'query' stamp: 'JA 5/16/2018 17:55:33'!
+answerQuery: query
 
 	self subclassResponsibility.! !
 
@@ -726,10 +742,6 @@ balance
 
 	^value negated.! !
 
-!CertificateOfDeposit methodsFor: 'evaluating' stamp: 'JA 5/13/2018 01:27:23'!
-earnings
-	^value * tna / 360 * numberOfDays! !
-
 !CertificateOfDeposit methodsFor: 'evaluating' stamp: 'JA 5/15/2018 20:11:35'!
 numberOfDays
 
@@ -746,10 +758,10 @@ value
 	^value.! !
 
 
-!CertificateOfDeposit methodsFor: 'printing' stamp: 'JA 5/16/2018 17:23:19'!
-summary
+!CertificateOfDeposit methodsFor: 'query' stamp: 'JA 5/16/2018 19:38:08'!
+answerQuery: query
 
-	^'Plazo fijo por ', value asString, ' durante ', numberOfDays asString, ' dias a una tna de ', (tna * 100) asString, '%'.! !
+	^query certificateOfDepositAnswerOf: self.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -797,10 +809,10 @@ value
 	^value.! !
 
 
-!Deposit methodsFor: 'printing' stamp: 'JA 5/16/2018 17:23:10'!
-summary
+!Deposit methodsFor: 'query' stamp: 'JA 5/16/2018 19:38:18'!
+answerQuery: query
 
-	^'Deposito por ', value asString.! !
+	^query depositAnswerOf: self.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -854,10 +866,10 @@ value
 	^correspondingTransfer value.! !
 
 
-!TransferDeposit methodsFor: 'printing' stamp: 'JA 5/16/2018 17:23:03'!
-summary
+!TransferDeposit methodsFor: 'query' stamp: 'JA 5/16/2018 19:38:25'!
+answerQuery: query
 
-	^'Transferencia por ', correspondingTransfer value asString.! !
+	^query transferDepositAnswerOf: self.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -901,10 +913,10 @@ value
 	^correspondingTransfer value.! !
 
 
-!TransferWithdraw methodsFor: 'printing' stamp: 'JA 5/16/2018 17:22:56'!
-summary
+!TransferWithdraw methodsFor: 'query' stamp: 'JA 5/16/2018 19:38:32'!
+answerQuery: query
 
-	^'Transferencia por ', correspondingTransfer value negated asString.! !
+	^query transferWithdrawAnswerOf: self.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -942,10 +954,10 @@ value
 	^value.! !
 
 
-!Withdraw methodsFor: 'printing' stamp: 'JA 5/16/2018 17:22:48'!
-summary
+!Withdraw methodsFor: 'query' stamp: 'JA 5/16/2018 19:38:39'!
+answerQuery: query
 
-	^'Extraccion por ', value asString.! !
+	^query withdrawAnswerOf: self.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -967,6 +979,154 @@ register: aValue on: account
 	account register: withdraw.
 
 	^ withdraw! !
+
+
+!classDefinition: #HumanReadableAccount category: #'PortfolioTreePrinter-Ejercicio'!
+Object subclass: #HumanReadableAccount
+	instanceVariableNames: 'account'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'PortfolioTreePrinter-Ejercicio'!
+
+!HumanReadableAccount methodsFor: 'initialization' stamp: 'JA 5/16/2018 17:32:28'!
+withAccount: summaryAccount
+
+	account := summaryAccount.! !
+
+
+!HumanReadableAccount methodsFor: 'execution' stamp: 'JA 5/16/2018 19:39:55'!
+certificateOfDepositAnswerOf: transaction
+
+	self subclassResponsibility.! !
+
+!HumanReadableAccount methodsFor: 'execution' stamp: 'JA 5/16/2018 19:40:20'!
+depositAnswerOf: transaction
+
+	self subclassResponsibility.! !
+
+!HumanReadableAccount methodsFor: 'execution' stamp: 'JA 5/16/2018 19:42:23'!
+portfolioAnswerOf: account
+
+	self subclassResponsibility.! !
+
+!HumanReadableAccount methodsFor: 'execution' stamp: 'JA 5/16/2018 19:42:39'!
+receptiveAccountAnswerOf: account
+
+	self subclassResponsibility.! !
+
+!HumanReadableAccount methodsFor: 'execution' stamp: 'JA 5/16/2018 19:40:33'!
+transferDepositAnswerOf: transaction
+
+	self subclassResponsibility.! !
+
+!HumanReadableAccount methodsFor: 'execution' stamp: 'JA 5/16/2018 19:40:46'!
+transferWithdrawAnswerOf: transaction
+
+	self subclassResponsibility.! !
+
+!HumanReadableAccount methodsFor: 'execution' stamp: 'JA 5/16/2018 19:40:57'!
+withdrawAnswerOf: transaction
+
+	self subclassResponsibility.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'HumanReadableAccount class' category: #'PortfolioTreePrinter-Ejercicio'!
+HumanReadableAccount class
+	instanceVariableNames: ''!
+
+!HumanReadableAccount class methodsFor: 'instance creation' stamp: 'JA 5/16/2018 17:32:51'!
+of: account
+
+	^self new withAccount: account.! !
+
+
+!classDefinition: #AccountSummary category: #'PortfolioTreePrinter-Ejercicio'!
+HumanReadableAccount subclass: #AccountSummary
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'PortfolioTreePrinter-Ejercicio'!
+
+!AccountSummary methodsFor: 'execution' stamp: 'JA 5/16/2018 19:39:02'!
+certificateOfDepositAnswerOf: transaction
+
+	^'Plazo fijo por ', transaction value asString, ' durante ', transaction numberOfDays asString, ' dias a una tna de ', (transaction tna * 100) asString, '%'.! !
+
+!AccountSummary methodsFor: 'execution' stamp: 'JA 5/16/2018 19:39:07'!
+depositAnswerOf: transaction
+
+	^'Deposito por ', transaction value asString.! !
+
+!AccountSummary methodsFor: 'execution' stamp: 'JA 5/16/2018 19:39:11'!
+transferDepositAnswerOf: transaction
+
+	^'Transferencia por ', transaction value asString.! !
+
+!AccountSummary methodsFor: 'execution' stamp: 'JA 5/16/2018 19:39:15'!
+transferWithdrawAnswerOf: transaction
+
+	^'Transferencia por ', transaction transfer value negated asString.! !
+
+!AccountSummary methodsFor: 'execution' stamp: 'JA 5/16/2018 18:07:25'!
+value
+	^account transactions collect: [:transaction | transaction answerQuery: self].! !
+
+!AccountSummary methodsFor: 'execution' stamp: 'JA 5/16/2018 19:39:20'!
+withdrawAnswerOf: transaction
+
+	^'Extraccion por ', transaction value asString.! !
+
+
+!classDefinition: #PortfolioTree category: #'PortfolioTreePrinter-Ejercicio'!
+HumanReadableAccount subclass: #PortfolioTree
+	instanceVariableNames: 'accountNames'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'PortfolioTreePrinter-Ejercicio'!
+
+!PortfolioTree methodsFor: 'execution' stamp: 'JA 5/16/2018 19:56:29'!
+portfolioAnswerOf: portfolio
+
+	^portfolio accounts
+		inject: (OrderedCollection with: (accountNames at: portfolio))
+		into: [
+			:portfolioTree :account |
+			portfolioTree addAllLast: ((PortfolioTree of: account withNames: accountNames) value collect: [:node | ' ', node]).
+			portfolioTree.
+		].! !
+
+!PortfolioTree methodsFor: 'execution' stamp: 'JA 5/16/2018 19:55:26'!
+receptiveAccountAnswerOf: account
+
+	^OrderedCollection with: (accountNames at: account).! !
+
+!PortfolioTree methodsFor: 'execution' stamp: 'JA 5/16/2018 19:57:38'!
+reverse
+
+	^self value reverse.! !
+
+!PortfolioTree methodsFor: 'execution' stamp: 'JA 5/16/2018 19:54:29'!
+value
+
+	^account answerQuery: self.! !
+
+
+!PortfolioTree methodsFor: 'initialization' stamp: 'JA 5/16/2018 17:35:48'!
+withNames: names
+
+	accountNames := names.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'PortfolioTree class' category: #'PortfolioTreePrinter-Ejercicio'!
+PortfolioTree class
+	instanceVariableNames: ''!
+
+!PortfolioTree class methodsFor: 'instance creation' stamp: 'JA 5/16/2018 17:35:13'!
+of: account withNames: names
+
+	^(self of: account) withNames: names.! !
 
 
 !classDefinition: #SummarizingAccount category: #'PortfolioTreePrinter-Ejercicio'!
@@ -997,23 +1157,6 @@ transactions
 
 	self subclassResponsibility ! !
 
-
-!SummarizingAccount methodsFor: 'printing' stamp: 'JA 5/13/2018 02:11:39'!
-printWithName: name andDepth: level
-	
-	self subclassResponsibility.! !
-
-!SummarizingAccount methodsFor: 'printing' stamp: 'JA 5/13/2018 02:26:48'!
-whiteSpacesForLevel: level
-
-	| whiteSpaces |	
-	
-	whiteSpaces := ''.
-	level timesRepeat: [whiteSpaces := whiteSpaces, ' '].
-	
-	^whiteSpaces.
-	! !
-
 
 !classDefinition: #Portfolio category: #'PortfolioTreePrinter-Ejercicio'!
 SummarizingAccount subclass: #Portfolio
@@ -1021,6 +1164,11 @@ SummarizingAccount subclass: #Portfolio
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'PortfolioTreePrinter-Ejercicio'!
+
+!Portfolio methodsFor: 'testing' stamp: 'JA 5/16/2018 19:56:02'!
+accounts
+
+	^accounts.! !
 
 !Portfolio methodsFor: 'testing' stamp: 'HAW 5/8/2018 16:46:26'!
 anyManagedAccountManages: anAccount
@@ -1067,30 +1215,10 @@ initializeWithAll: aCollectionOfAccounts
 	accounts := aCollectionOfAccounts   ! !
 
 
-!Portfolio methodsFor: 'printing' stamp: 'JA 5/13/2018 02:58:07'!
-printReversedTreeWithNames: accountNames
+!Portfolio methodsFor: 'query' stamp: 'JA 5/16/2018 19:32:51'!
+answerQuery: query
 
-	^(self printTreeWithNames: accountNames) reverse.! !
-
-!Portfolio methodsFor: 'printing' stamp: 'JA 5/13/2018 02:18:59'!
-printTreeWithNames: accountNames
-	
-	^self printWithNames: accountNames andDepth: 0.! !
-
-!Portfolio methodsFor: 'printing' stamp: 'JA 5/13/2018 02:51:29'!
-printWithNames: accountNames andDepth: depth
-
-	| thisPortfolio deeperLevels tree |
-	
-	thisPortfolio := (self whiteSpacesForLevel: depth), (accountNames at: self).
-	deeperLevels := (accounts collect: [:account | account printWithNames: accountNames andDepth: (depth+1)]).
-
-	tree := OrderedCollection new.
-	deeperLevels do: [:list | list do: [:account | tree add: account]].
-
-	tree addFirst: thisPortfolio.
-	
-	^tree.! !
+	^query portfolioAnswerOf: self.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -1191,10 +1319,10 @@ registers: aTtransaction
 ! !
 
 
-!ReceptiveAccount methodsFor: 'printing' stamp: 'JA 5/13/2018 02:52:35'!
-printWithNames: accountNames andDepth: depth
+!ReceptiveAccount methodsFor: 'query' stamp: 'JA 5/16/2018 19:33:37'!
+answerQuery: query
 
-	^OrderedCollection with: (self whiteSpacesForLevel: depth), (accountNames at: self).! !
+	^query receptiveAccountAnswerOf: self.! !
 
 
 !classDefinition: #Transfer category: #'PortfolioTreePrinter-Ejercicio'!
