@@ -590,14 +590,19 @@ initializeFor: aReceptiveAccount
 	account := aReceptiveAccount ! !
 
 
-!AccountSummaryWithAllInvestmentInformation methodsFor: 'evaluating' stamp: 'HernanWilkinson 7/17/2011 23:58'!
+!AccountSummaryWithAllInvestmentInformation methodsFor: 'evaluating' stamp: 'JA 5/19/2018 21:08:43'!
 lines 
 
-	| lines investmentEarnings |
-	
+	| lines investmentEarnings earningsValue linesTask |
+		
 	investmentEarnings := InvestmentNetVisitor for: account.
-	lines := (AccountSummaryWithInvestmentEarnings for: account) lines.
-	lines add: 'Inversiones por ', investmentEarnings value printString.
+
+	linesTask := ParallelTask
+		with: (Task of: [lines := (AccountSummaryWithInvestmentEarnings for: account) lines])
+		with: (Task of: [earningsValue := investmentEarnings value]).
+	linesTask runAsynchronously; wait.
+	
+	lines add: 'Inversiones por ', earningsValue printString.
 	
 	 ^ lines! !
 
@@ -626,14 +631,19 @@ initializeFor: aReceptiveAccount
 	account := aReceptiveAccount ! !
 
 
-!AccountSummaryWithInvestmentEarnings methodsFor: 'evaluating' stamp: 'HernanWilkinson 7/17/2011 23:53'!
+!AccountSummaryWithInvestmentEarnings methodsFor: 'evaluating' stamp: 'JA 5/19/2018 21:08:58'!
 lines 
 
-	| lines investmentEarnings |
+	| lines investmentEarnings earningsValue linesTask |
 	
 	investmentEarnings := InvestmentEarningVisitor for: account.
-	lines := (AccountSummary for: account) lines.
-	lines add: 'Ganancias por ', investmentEarnings value printString.
+	
+	linesTask := ParallelTask
+		with: (Task of: [lines := (AccountSummary for: account) lines])
+		with: (Task of: [earningsValue := investmentEarnings value]).
+	linesTask runAsynchronously; wait.
+
+	lines add: 'Ganancias por ', earningsValue printString.
 	
 	 ^ lines! !
 
@@ -1283,6 +1293,92 @@ InvestmentNetVisitor class
 for: aReceptiveAccount 
 	
 	^ self new initializeFor: aReceptiveAccount ! !
+
+
+!classDefinition: #AsynchronousTask category: #'PortfolioTimeConsuming-Ejercicio'!
+Object subclass: #AsynchronousTask
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'PortfolioTimeConsuming-Ejercicio'!
+
+!AsynchronousTask methodsFor: 'running' stamp: 'JA 5/19/2018 20:54:15'!
+runAsynchronously
+	self subclassResponsibility.! !
+
+!AsynchronousTask methodsFor: 'running' stamp: 'JA 5/19/2018 20:54:28'!
+wait
+	self subclassResponsibility.! !
+
+
+!classDefinition: #ParallelTask category: #'PortfolioTimeConsuming-Ejercicio'!
+AsynchronousTask subclass: #ParallelTask
+	instanceVariableNames: 'tasks'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'PortfolioTimeConsuming-Ejercicio'!
+
+!ParallelTask methodsFor: 'running' stamp: 'JA 5/19/2018 20:50:20'!
+runAsynchronously
+	tasks do: [ :task | task runAsynchronously ].! !
+
+!ParallelTask methodsFor: 'running' stamp: 'JA 5/19/2018 20:50:26'!
+wait
+	tasks do: [ :task | task wait ].! !
+
+
+!ParallelTask methodsFor: 'initializing' stamp: 'JA 5/19/2018 20:55:03'!
+initializeWith: aCollectionOfTasks
+	tasks := aCollectionOfTasks.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'ParallelTask class' category: #'PortfolioTimeConsuming-Ejercicio'!
+ParallelTask class
+	instanceVariableNames: ''!
+
+!ParallelTask class methodsFor: 'instance creation' stamp: 'JA 5/19/2018 20:51:29'!
+with: aTask with: anotherTask 
+	^self withAll: (Bag with: aTask with: anotherTask)! !
+
+!ParallelTask class methodsFor: 'instance creation' stamp: 'JA 5/19/2018 20:45:31'!
+withAll: aCollectionOfTasks
+	^self new initializeWith: aCollectionOfTasks.! !
+
+
+!classDefinition: #Task category: #'PortfolioTimeConsuming-Ejercicio'!
+AsynchronousTask subclass: #Task
+	instanceVariableNames: 'block semaphore'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'PortfolioTimeConsuming-Ejercicio'!
+
+!Task methodsFor: 'initializing' stamp: 'JA 5/19/2018 20:29:58'!
+initializeWith: aBlock
+	block := aBlock.
+	semaphore := Semaphore new.! !
+
+
+!Task methodsFor: 'running' stamp: 'JA 5/19/2018 20:32:17'!
+runAsynchronously
+	[
+		block value.
+		semaphore signal.
+	] fork.! !
+
+!Task methodsFor: 'running' stamp: 'JA 5/19/2018 20:31:11'!
+wait
+	semaphore wait.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'Task class' category: #'PortfolioTimeConsuming-Ejercicio'!
+Task class
+	instanceVariableNames: ''!
+
+!Task class methodsFor: 'instance creation' stamp: 'JA 5/19/2018 20:27:10'!
+of: aBlock
+	^self new initializeWith: aBlock.! !
 
 
 !classDefinition: #ReversePortfolioTreePrinter category: #'PortfolioTimeConsuming-Ejercicio'!
