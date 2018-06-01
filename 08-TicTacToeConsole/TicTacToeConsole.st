@@ -1,3 +1,42 @@
+!classDefinition: #TicTacToeConsoleTest category: #TicTacToeConsole!
+TestCase subclass: #TicTacToeConsoleTest
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TicTacToeConsole'!
+
+!TicTacToeConsoleTest methodsFor: 'testing' stamp: 'JA 5/31/2018 20:27:47'!
+test00_logIsInitiallyEmpty
+	| game log |
+	
+	game _ TicTacToe new.
+	log _ TicTacToeLog of: game.
+	
+	self assert: log entries equals: OrderedCollection new.! !
+
+!TicTacToeConsoleTest methodsFor: 'testing' stamp: 'JA 5/31/2018 20:21:14'!
+test01_moveIsDisplayedOnLog
+	| game log |
+	
+	game _ TicTacToe new.
+	log _ TicTacToeLog of: game.
+	
+	game markWithXAt: 1@1.
+	self assert: log lastEntry equals: 'X marcó en 1@1'.! !
+
+!TicTacToeConsoleTest methodsFor: 'testing' stamp: 'JA 5/31/2018 20:15:52'!
+test02_newTurnIsDisplayedOnLog! !
+
+!TicTacToeConsoleTest methodsFor: 'testing' stamp: 'JA 5/31/2018 20:16:34'!
+test03_logKeepsPreviousEventsInOrder! !
+
+!TicTacToeConsoleTest methodsFor: 'testing' stamp: 'JA 5/31/2018 20:17:56'!
+test04_winsAreDisplayedOnLog! !
+
+!TicTacToeConsoleTest methodsFor: 'testing' stamp: 'JA 5/31/2018 20:18:09'!
+test05_tiesAreDisplayedOnLog! !
+
+
 !classDefinition: #TicTacToeTest category: #TicTacToeConsole!
 TestCase subclass: #TicTacToeTest
 	instanceVariableNames: ''
@@ -226,9 +265,76 @@ gameWithMovesAt: positions
 	^ game.! !
 
 
+!classDefinition: #EventBroadcaster category: #TicTacToeConsole!
+Object subclass: #EventBroadcaster
+	instanceVariableNames: 'consumers'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TicTacToeConsole'!
+
+!EventBroadcaster methodsFor: 'broadcasting' stamp: 'JA 5/31/2018 20:51:44'!
+broadcastXMarkedAt: aPoint onGame: aTicTacToe
+	| subscribed |
+	
+	subscribed _ consumers select: [ :consumer | consumer subscribedTo: aTicTacToe ].
+	subscribed do: [ :consumer | consumer xMarkedAt: aPoint ].! !
+
+
+!EventBroadcaster methodsFor: 'initialization' stamp: 'JA 5/31/2018 20:52:07'!
+initialize
+	consumers _ Set new.! !
+
+
+!EventBroadcaster methodsFor: 'subscribing' stamp: 'JA 5/31/2018 20:53:21'!
+subscribe: aConsumer
+	consumers add: aConsumer.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'EventBroadcaster class' category: #TicTacToeConsole!
+EventBroadcaster class
+	instanceVariableNames: 'instance'!
+
+!EventBroadcaster class methodsFor: 'singleton' stamp: 'JA 5/31/2018 21:00:13'!
+instance
+	instance ifNil: [
+		instance _ self new.
+	].
+	^instance.! !
+
+
+!classDefinition: #EventConsumer category: #TicTacToeConsole!
+Object subclass: #EventConsumer
+	instanceVariableNames: 'ticTacToe log'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TicTacToeConsole'!
+
+!EventConsumer methodsFor: 'inspecting' stamp: 'JA 5/31/2018 21:01:46'!
+subscribedTo: aTicTacToe 
+	^ticTacToe = aTicTacToe! !
+
+
+!EventConsumer methodsFor: 'consuming' stamp: 'JA 5/31/2018 21:03:54'!
+xMarkedAt: aPosition
+	log xMarkedAt: aPosition.! !
+
+
+!classDefinition: #EventProducer category: #TicTacToeConsole!
+Object subclass: #EventProducer
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TicTacToeConsole'!
+
+!EventProducer methodsFor: 'notifying' stamp: 'JA 5/31/2018 20:40:27'!
+notifyXMarkedAt: aPosition onGame: aTicTacToe
+	(EventBroadcaster instance) broadcastXMarkedAt: aPosition onGame: aTicTacToe.! !
+
+
 !classDefinition: #TicTacToe category: #TicTacToeConsole!
 Object subclass: #TicTacToe
-	instanceVariableNames: 'board gameState'
+	instanceVariableNames: 'board gameState eventProducer'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TicTacToeConsole'!
@@ -241,10 +347,11 @@ hasPlayerOWon
 hasPlayerXWon
 	^gameState hasPlayerXWon.! !
 
-!TicTacToe methodsFor: 'inspecting' stamp: 'MC 5/28/2018 20:11:57'!
+!TicTacToe methodsFor: 'inspecting' stamp: 'JA 5/31/2018 20:31:45'!
 initialize
 	board _ TicTacToeBoard new.
-	gameState _ TicTacToeGameStateTurnOfX new.! !
+	gameState _ TicTacToeGameStateTurnOfX new.
+	eventProducer _ EventProducer new.! !
 
 !TicTacToe methodsFor: 'inspecting' stamp: 'MC 5/28/2018 20:12:22'!
 isOver
@@ -270,12 +377,13 @@ markWithOAt: aPosition
 		on: board
 		during: self.! !
 
-!TicTacToe methodsFor: 'playing' stamp: 'MC 5/28/2018 20:12:37'!
+!TicTacToe methodsFor: 'playing' stamp: 'JA 5/31/2018 20:38:43'!
 markWithXAt: aPosition
 	gameState
 		markWithXAt: aPosition
 		on: board
-		during: self.! !
+		during: self.
+	eventProducer notifyXMarkedAt: aPosition onGame: self.! !
 
 
 !TicTacToe methodsFor: 'turn handling' stamp: 'MC 5/28/2018 20:12:41'!
@@ -622,3 +730,37 @@ markWithOAt: aPosition on: aBoard during: aGame
 !TicTacToeGameStateXWon methodsFor: 'playing' stamp: 'MC 5/28/2018 21:46:42'!
 markWithXAt: aPosition on: aBoard during: aGame
 	self error: TicTacToe playOnInvalidTurnMessage.! !
+
+
+!classDefinition: #TicTacToeLog category: #TicTacToeConsole!
+Object subclass: #TicTacToeLog
+	instanceVariableNames: 'game log eventConsumer'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TicTacToeConsole'!
+
+!TicTacToeLog methodsFor: 'initialization' stamp: 'JA 5/31/2018 20:55:54'!
+withGame: aTicTacToe 
+	game _ aTicTacToe.
+	log _ OrderedCollection new.
+	eventConsumer _ EventConsumer new.
+	EventBroadcaster instance subscribe: eventConsumer.! !
+
+
+!TicTacToeLog methodsFor: 'inspecting' stamp: 'JA 5/31/2018 20:28:08'!
+entries
+	^log.! !
+
+!TicTacToeLog methodsFor: 'inspecting' stamp: 'JA 5/31/2018 20:23:46'!
+lastEntry
+	^log last.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'TicTacToeLog class' category: #TicTacToeConsole!
+TicTacToeLog class
+	instanceVariableNames: ''!
+
+!TicTacToeLog class methodsFor: 'instance creation' stamp: 'JA 5/31/2018 20:22:42'!
+of: aTicTacToe
+	^self new withGame: aTicTacToe.! !
