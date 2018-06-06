@@ -43,7 +43,7 @@ test04_cartCanHoldDifferentItems
 	self assert: (cart includes: 'a book').
 	self assert: (cart includes: 'another book').! !
 
-!CartTest methodsFor: 'testing' stamp: 'MC 6/4/2018 21:51:10'!
+!CartTest methodsFor: 'testing' stamp: 'MC 6/6/2018 19:08:05'!
 test05_cartCanHoldTheSameItemMultipleTimes
 	| catalog cart |
 	catalog _ Set
@@ -51,7 +51,27 @@ test05_cartCanHoldTheSameItemMultipleTimes
 	cart _ Cart forCatalog: catalog.
 	cart add: 'a book' quantity: 3.
 	self assert: (cart includes: 'a book').
-	self assert: (cart quantityFor: 'a book') equals: 3.! !
+	self assert: 3 equals: (cart quantityFor: 'a book').! !
+
+!CartTest methodsFor: 'testing' stamp: 'MC 6/6/2018 19:03:20'!
+test06_cartCannotHoldLessThanOneOfAnItem
+	| catalog cart |
+	catalog _ Set
+		with: 'a book'.
+	cart _ Cart forCatalog: catalog.
+	self
+		should: [ cart add: 'a book' quantity: 0 ]
+		raise: Error - MessageNotUnderstood
+		withMessageText: Cart itemQuantityShouldBeOneOrMore.
+	self assert: cart isEmpty.! !
+
+!CartTest methodsFor: 'testing' stamp: 'MC 6/6/2018 19:07:42'!
+test07_cartReturnsQuantityZeroForItemsNotPresent
+	| catalog cart |
+	catalog _ Set
+		with: 'a book'.
+	cart _ Cart forCatalog: catalog.
+	self assert: 0 equals: (cart quantityFor: 'a book').! !
 
 
 !classDefinition: #Cart category: #TusLibros!
@@ -65,11 +85,14 @@ Object subclass: #Cart
 add: anItem
 	self add: anItem quantity: 1.! !
 
-!Cart methodsFor: 'item management' stamp: 'MC 6/4/2018 21:58:13'!
+!Cart methodsFor: 'item management' stamp: 'MC 6/6/2018 19:03:04'!
 add: anItem quantity: quantity
 	| currentQuantity |
 	(catalog includes: anItem) ifFalse: [
 		self error: self class bookNotInCatalogMessage.
+	].
+	(quantity > 0) ifFalse: [
+		self error: self class itemQuantityShouldBeOneOrMore.
 	].
 	currentQuantity _ items at: anItem ifAbsent: [0].
 	items at: anItem put: currentQuantity + quantity.! !
@@ -89,9 +112,9 @@ includes: anItem
 isEmpty
 	^items isEmpty.! !
 
-!Cart methodsFor: 'item inspection' stamp: 'MC 6/4/2018 22:00:40'!
+!Cart methodsFor: 'item inspection' stamp: 'MC 6/6/2018 19:06:55'!
 quantityFor: anItem
-	^items at: anItem.! !
+	^items at: anItem ifAbsent: [0].! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -107,3 +130,7 @@ forCatalog: aCatalog
 !Cart class methodsFor: 'error handling' stamp: 'MC 6/4/2018 21:35:47'!
 bookNotInCatalogMessage
 	^'El libro no puede agregarse al carrito por no estar en el catálogo'.! !
+
+!Cart class methodsFor: 'error handling' stamp: 'MC 6/6/2018 19:02:00'!
+itemQuantityShouldBeOneOrMore
+	^'Item quantity should be one or more'.! !
