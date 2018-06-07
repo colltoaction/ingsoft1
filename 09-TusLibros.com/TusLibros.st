@@ -186,7 +186,7 @@ withUsers: knownUsers andCatalog: aCatalog
 	catalog _ aCatalog! !
 
 
-!Market methodsFor: 'cat management' stamp: 'MC 6/6/2018 19:30:54'!
+!Market methodsFor: 'cart management' stamp: 'MC 6/6/2018 19:30:54'!
 newCartFor: user
 	(users includes: user) ifFalse: [
 		self error: self class userNotKnown.
