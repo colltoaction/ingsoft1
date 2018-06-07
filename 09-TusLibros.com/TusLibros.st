@@ -73,6 +73,18 @@ test07_cartReturnsQuantityZeroForItemsNotPresent
 	cart _ Cart forCatalog: catalog.
 	self assert: 0 equals: (cart quantityFor: 'a book').! !
 
+!CartTest methodsFor: 'testing' stamp: 'JA 6/7/2018 20:30:18'!
+test08_cartCannotHoldNonIntegerQuantitiesOfAnItem
+	| catalog cart |
+	catalog _ Set
+		with: 'a book'.
+	cart _ Cart forCatalog: catalog.
+	self
+		should: [ cart add: 'a book' quantity: 1.5 ]
+		raise: Error - MessageNotUnderstood
+		withMessageText: Cart itemQuantityShouldBeAnInteger.
+	self assert: cart isEmpty.! !
+
 
 !classDefinition: #MarketTest category: #TusLibros!
 TestCase subclass: #MarketTest
@@ -122,36 +134,37 @@ Object subclass: #Cart
 add: anItem
 	self add: anItem quantity: 1.! !
 
-!Cart methodsFor: 'item management' stamp: 'MC 6/6/2018 19:03:04'!
+!Cart methodsFor: 'item management' stamp: 'JA 6/7/2018 20:29:13'!
 add: anItem quantity: quantity
-	| currentQuantity |
 	(catalog includes: anItem) ifFalse: [
 		self error: self class bookNotInCatalogMessage.
 	].
 	(quantity > 0) ifFalse: [
 		self error: self class itemQuantityShouldBeOneOrMore.
 	].
-	currentQuantity _ items at: anItem ifAbsent: [0].
-	items at: anItem put: currentQuantity + quantity.! !
+	(quantity isInteger) ifFalse: [
+		self error: self class itemQuantityShouldBeAnInteger.
+	].
+	items add: anItem withOccurrences: quantity.! !
 
 
-!Cart methodsFor: 'initialization' stamp: 'MC 6/4/2018 21:56:58'!
+!Cart methodsFor: 'initialization' stamp: 'JA 6/7/2018 20:21:57'!
 initializeFor: aCatalog
 	catalog _ aCatalog.
-	items _ Dictionary new.! !
+	items _ Bag new.! !
 
 
-!Cart methodsFor: 'item inspection' stamp: 'MC 6/4/2018 22:00:00'!
+!Cart methodsFor: 'item inspection' stamp: 'JA 6/7/2018 20:26:26'!
 includes: anItem
-	^items includesKey: anItem.! !
+	^items includes: anItem.! !
 
 !Cart methodsFor: 'item inspection' stamp: 'MC 6/4/2018 21:45:49'!
 isEmpty
 	^items isEmpty.! !
 
-!Cart methodsFor: 'item inspection' stamp: 'MC 6/6/2018 19:06:55'!
+!Cart methodsFor: 'item inspection' stamp: 'JA 6/7/2018 20:27:20'!
 quantityFor: anItem
-	^items at: anItem ifAbsent: [0].! !
+	^items occurrencesOf: anItem.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -167,6 +180,10 @@ forCatalog: aCatalog
 !Cart class methodsFor: 'error handling' stamp: 'MC 6/4/2018 21:35:47'!
 bookNotInCatalogMessage
 	^'El libro no puede agregarse al carrito por no estar en el catálogo'.! !
+
+!Cart class methodsFor: 'error handling' stamp: 'JA 6/7/2018 20:31:28'!
+itemQuantityShouldBeAnInteger
+	^'Item quantity should be integer'.! !
 
 !Cart class methodsFor: 'error handling' stamp: 'MC 6/6/2018 19:02:00'!
 itemQuantityShouldBeOneOrMore
