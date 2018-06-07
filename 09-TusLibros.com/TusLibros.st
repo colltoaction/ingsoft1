@@ -81,7 +81,7 @@ TestCase subclass: #MarketTest
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!MarketTest methodsFor: 'as yet unclassified' stamp: 'MC 6/6/2018 19:19:22'!
+!MarketTest methodsFor: 'testing' stamp: 'MC 6/6/2018 19:19:22'!
 test01_marketCanGiveKnownUserANewCart
 	| catalog market users |
 	users _ Set with: 'a user'.
@@ -89,7 +89,7 @@ test01_marketCanGiveKnownUserANewCart
 	market _ Market forUsers: users buyingFromCatalog: catalog.
 	self assert: (market newCartFor: 'a user') isEmpty.! !
 
-!MarketTest methodsFor: 'as yet unclassified' stamp: 'MC 6/6/2018 19:25:03'!
+!MarketTest methodsFor: 'testing' stamp: 'MC 6/6/2018 19:25:03'!
 test02_userCanAddItemFromCatalogToMarketsCart
 	| catalog market users cart |
 	users _ Set with: 'a user'.
@@ -99,7 +99,7 @@ test02_userCanAddItemFromCatalogToMarketsCart
 	cart add: 'a book'.
 	self assert: (cart includes: 'a book').! !
 
-!MarketTest methodsFor: 'as yet unclassified' stamp: 'MC 6/6/2018 19:29:27'!
+!MarketTest methodsFor: 'testing' stamp: 'MC 6/6/2018 19:29:27'!
 test03_marketCannotGiveUnknownUserANewCart
 	| catalog market users |
 	users _ Set new.
