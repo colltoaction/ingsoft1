@@ -107,7 +107,7 @@ test02_checkoutOfACartWithOneProductTotalPriceIsTheProductsPrice
 	totalPrice _ cashier checkout: cart withCreditCard: card.
 	self assert: totalPrice equals: (catalog priceOf: 'a book').! !
 
-!CheckoutTest methodsFor: 'testing' stamp: 'JA 6/8/2018 09:01:38'!
+!CheckoutTest methodsFor: 'testing' stamp: 'JA 6/11/2018 17:28:08'!
 test03_checkoutOfACartWithMultipleProductsTotalPriceIsTheSumOfTheProductsPrices
 	| card cart cashier catalog totalPrice |
 	catalog _ TusLibrosTestResource catalogWithTwoItems.
@@ -120,7 +120,7 @@ test03_checkoutOfACartWithMultipleProductsTotalPriceIsTheSumOfTheProductsPrices
 	card _ CreditCard withExpirationDate: FixedGregorianDate theEndOfTime.
 	
 	totalPrice _ cashier checkout: cart withCreditCard: card.
-	self assert: totalPrice equals: (SimpleMeasure amount: 203 unit: TusLibrosTestResource peso).! !
+	self assert: totalPrice equals: 203 * peso.! !
 
 !CheckoutTest methodsFor: 'testing' stamp: 'JA 6/8/2018 09:00:55'!
 test04_cannotBuyWithAnExpiredCreditCard
@@ -379,7 +379,6 @@ newCartFor: user
 	].
 	^Cart forCatalog: catalog.! !
 
-
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 !classDefinition: 'Market class' category: #TusLibros!
@@ -409,23 +408,10 @@ Object subclass: #TusLibrosTestResource
 TusLibrosTestResource class
 	instanceVariableNames: ''!
 
-!TusLibrosTestResource class methodsFor: 'money' stamp: 'JA 6/8/2018 08:52:43'!
-oneHundredPesos
-	^SimpleMeasure amount: 100 unit: self peso.! !
-
-!TusLibrosTestResource class methodsFor: 'money' stamp: 'JA 6/8/2018 08:52:52'!
-peso
-	^BaseUnit named: 'peso'.! !
-
-!TusLibrosTestResource class methodsFor: 'money' stamp: 'JA 6/8/2018 08:55:31'!
-threePesos
-	^SimpleMeasure amount: 3 unit: self peso.! !
-
-
-!TusLibrosTestResource class methodsFor: 'catalog' stamp: 'JA 6/8/2018 08:54:41'!
+!TusLibrosTestResource class methodsFor: 'catalog' stamp: 'JA 6/11/2018 17:28:32'!
 catalogWithOneItem
-	^Catalog empty add: 'a book' withPrice: self oneHundredPesos.! !
+	^Catalog empty add: 'a book' withPrice: 100 * peso.! !
 
-!TusLibrosTestResource class methodsFor: 'catalog' stamp: 'JA 6/8/2018 08:55:15'!
+!TusLibrosTestResource class methodsFor: 'catalog' stamp: 'JA 6/11/2018 17:28:25'!
 catalogWithTwoItems
-	^self catalogWithOneItem add: 'another book' withPrice: self threePesos.! !
+	^self catalogWithOneItem add: 'another book' withPrice: 3 * peso.! !
