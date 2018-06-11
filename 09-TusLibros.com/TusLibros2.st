@@ -81,56 +81,59 @@ TestCase subclass: #CheckoutTest
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!CheckoutTest methodsFor: 'testing' stamp: 'JA 6/7/2018 23:15:48'!
+!CheckoutTest methodsFor: 'testing' stamp: 'JA 6/11/2018 17:51:19'!
 test01_cannotCheckoutAnEmptyCart
-	| catalog cart card cashier |
-	catalog _ Catalog new.
-	cart _ Cart forCatalog: catalog.
-	cashier _ Cashier new.
+	| catalog cart card cashier market |
+	catalog _ Catalog empty.
+	market _ TusLibrosTestResource marketWithOneUserForCatalog: catalog.
+	
+	cart _ market newCartFor: TusLibrosTestResource aUser.
+	cashier _ market newCashier.
 	card _ CreditCard new.
+	
 	self
 		should: [ cashier checkout: cart withCreditCard: card. ]
 		raise: Error - MessageNotUnderstood
 		withMessageText: Cashier cannotCheckoutEmptyCartMessage.! !
 
-!CheckoutTest methodsFor: 'testing' stamp: 'JA 6/8/2018 08:59:34'!
+!CheckoutTest methodsFor: 'testing' stamp: 'JA 6/11/2018 17:53:26'!
 test02_checkoutOfACartWithOneProductTotalPriceIsTheProductsPrice
-	| catalog cart card cashier totalPrice |
+	| catalog cart card cashier totalPrice market |
 	catalog _ TusLibrosTestResource catalogWithOneItem.
-
-	cart _ Cart forCatalog: catalog.
-	cart add: 'a book'.
+	market _ TusLibrosTestResource marketWithOneUserForCatalog: catalog.
 	
-	cashier _ Cashier forCatalog: catalog.
+	cart _ market newCartFor: TusLibrosTestResource aUser.
+	cart add: 'a book'.
+	cashier _ market newCashier.
 	card _ CreditCard withExpirationDate: FixedGregorianDate theEndOfTime.
 	
 	totalPrice _ cashier checkout: cart withCreditCard: card.
 	self assert: totalPrice equals: (catalog priceOf: 'a book').! !
 
-!CheckoutTest methodsFor: 'testing' stamp: 'JA 6/11/2018 17:28:08'!
+!CheckoutTest methodsFor: 'testing' stamp: 'JA 6/11/2018 17:53:43'!
 test03_checkoutOfACartWithMultipleProductsTotalPriceIsTheSumOfTheProductsPrices
-	| card cart cashier catalog totalPrice |
+	| card cart cashier catalog totalPrice market |
 	catalog _ TusLibrosTestResource catalogWithTwoItems.
-		
-	cart _ Cart forCatalog: catalog.
+	market _ TusLibrosTestResource marketWithOneUserForCatalog: catalog.
+	
+	cart _ market newCartFor: TusLibrosTestResource aUser.
 	cart add: 'a book' quantity: 2.
 	cart add: 'another book'.
-	
-	cashier _ Cashier forCatalog: catalog.
+	cashier _ market newCashier.
 	card _ CreditCard withExpirationDate: FixedGregorianDate theEndOfTime.
 	
 	totalPrice _ cashier checkout: cart withCreditCard: card.
 	self assert: totalPrice equals: 203 * peso.! !
 
-!CheckoutTest methodsFor: 'testing' stamp: 'JA 6/8/2018 09:00:55'!
+!CheckoutTest methodsFor: 'testing' stamp: 'JA 6/11/2018 17:53:55'!
 test04_cannotBuyWithAnExpiredCreditCard
-	| card cart cashier catalog |
+	| card cart cashier catalog market |
 	catalog _ TusLibrosTestResource catalogWithOneItem.
+	market _ TusLibrosTestResource marketWithOneUserForCatalog: catalog.
 	
-	cart _ Cart forCatalog: catalog.
+	cart _ market newCartFor: TusLibrosTestResource aUser.
 	cart add: 'a book'.
-	
-	cashier _ Cashier forCatalog: catalog.
+	cashier _ market newCashier.
 	card _ CreditCard withExpirationDate: FixedGregorianDate yesterday.
 	
 	self
@@ -379,6 +382,11 @@ newCartFor: user
 	].
 	^Cart forCatalog: catalog.! !
 
+
+!Market methodsFor: 'cashier' stamp: 'JA 6/11/2018 17:45:40'!
+newCashier
+	^Cashier forCatalog: catalog.! !
+
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 !classDefinition: 'Market class' category: #TusLibros!
@@ -415,3 +423,16 @@ catalogWithOneItem
 !TusLibrosTestResource class methodsFor: 'catalog' stamp: 'JA 6/11/2018 17:28:25'!
 catalogWithTwoItems
 	^self catalogWithOneItem add: 'another book' withPrice: 3 * peso.! !
+
+
+!TusLibrosTestResource class methodsFor: 'users' stamp: 'JA 6/11/2018 17:44:52'!
+aUser
+	^'a user'.! !
+
+
+!TusLibrosTestResource class methodsFor: 'market' stamp: 'JA 6/11/2018 17:52:32'!
+marketWithOneUserForCatalog: aCatalog
+	| users |
+	users _ Set with: TusLibrosTestResource aUser.
+	^Market forUsers: users buyingFromCatalog: aCatalog.
+	! !
