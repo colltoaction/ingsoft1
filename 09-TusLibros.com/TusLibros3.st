@@ -114,17 +114,18 @@ setUp
 
 !classDefinition: #CashierTest category: #TusLibros!
 TestCase subclass: #CashierTest
-	instanceVariableNames: 'testObjectsFactory debitFromBlock stolenCreditCardBlock'
+	instanceVariableNames: 'testObjectsFactory debitFromBlock stolenCreditCardBlock sufficientFundsOnCreditCardBlock'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 09:21:49'!
+!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 19:47:24'!
 setUp 
 
 	testObjectsFactory := StoreTestObjectsFactory new.
 	debitFromBlock := [ :p1 :p2 | ].
-	stolenCreditCardBlock := [ :p1 | ].! !
+	stolenCreditCardBlock := [ :p1 | false ].
+	sufficientFundsOnCreditCardBlock := [ :p1 :p2 | true ].! !
 
 !CashierTest methodsFor: 'testing' stamp: 'MC 6/11/2018 21:00:14'!
 test01CanNotCheckoutAnEmptyCart
@@ -144,16 +145,13 @@ test01CanNotCheckoutAnEmptyCart
 			self assert: anError messageText = Cashier cartCanNotBeEmptyErrorMessage.
 			self assert: salesBook isEmpty ]! !
 
-!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 09:23:10'!
+!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 19:33:20'!
 test02CalculatedTotalIsCorrect
 
 	| cart cashier |
 	
 	cart := testObjectsFactory createCart.
 	cart add: 2 of: testObjectsFactory itemSellByTheStore.
-	stolenCreditCardBlock := [ :creditCard |
-		^false.
-	].
 	
 	cashier :=  Cashier
 		toCheckout: cart
@@ -163,7 +161,7 @@ test02CalculatedTotalIsCorrect
 		debitingOn: self.
 	self assert: cashier checkOut = (testObjectsFactory itemSellByTheStorePrice * 2)! !
 
-!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 09:24:38'!
+!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 19:47:05'!
 test03CanNotCheckoutWithAnExpiredCreditCard
 
 	| cart salesBook merchantCalledToDebit |
@@ -172,17 +170,15 @@ test03CanNotCheckoutWithAnExpiredCreditCard
 	cart add: testObjectsFactory itemSellByTheStore.
 	salesBook := OrderedCollection new.
 	merchantCalledToDebit := false.
-	debitFromBlock := [ :cardToDebitFrom :totalToDebit |
-		merchantCalledToDebit := true
-	].
+	debitFromBlock := [ :cardToDebitFrom :totalToDebit | merchantCalledToDebit := true ].
 	
 	self
 		should: [ Cashier 
-				toCheckout: cart 
-				charging: testObjectsFactory expiredCreditCard 
-				on: testObjectsFactory today
-				registeringOn: salesBook
-				debitingOn: self ]
+			toCheckout: cart 
+			charging: testObjectsFactory expiredCreditCard 
+			on: testObjectsFactory today
+			registeringOn: salesBook
+			debitingOn: self ]
 		raise: Error - MessageNotUnderstood
 		withExceptionDo: [ :anError | 
 			self assert: anError messageText = Cashier canNotChargeAnExpiredCreditCardErrorMessage.
@@ -191,7 +187,7 @@ test03CanNotCheckoutWithAnExpiredCreditCard
 	self assert: salesBook isEmpty.
 	self assert: merchantCalledToDebit not.! !
 
-!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 09:23:05'!
+!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 19:46:45'!
 test04CheckoutRegistersASale
 
 	| cart cashier salesBook total |
@@ -199,11 +195,8 @@ test04CheckoutRegistersASale
 	cart := testObjectsFactory createCart.
 	cart add: testObjectsFactory itemSellByTheStore.
 	salesBook := OrderedCollection new.
-	stolenCreditCardBlock := [ :creditCard |
-		^false.
-	].
  
-	cashier:= Cashier 
+	cashier := Cashier 
 		toCheckout: cart 
 		charging: testObjectsFactory notExpiredCreditCard
 		on: testObjectsFactory today
@@ -214,7 +207,7 @@ test04CheckoutRegistersASale
 	self assert: salesBook notEmpty.
 	self assert: salesBook first total = total.! !
 
-!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 09:23:01'!
+!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 19:33:55'!
 test05CheckoutSendsTransactionToMerchantProcessor
 
 	| cart cashier salesBook cardDebitedFrom total totalDebited card |
@@ -226,9 +219,6 @@ test05CheckoutSendsTransactionToMerchantProcessor
 	debitFromBlock := [ :cardToDebitFrom :totalToDebit |
 		cardDebitedFrom := cardToDebitFrom.
 		totalDebited := totalToDebit.
-	].
-	stolenCreditCardBlock := [ :creditCard |
-		^false.
 	].
  
 	cashier := Cashier 
@@ -242,7 +232,7 @@ test05CheckoutSendsTransactionToMerchantProcessor
 	self assert: total equals: totalDebited.
 	self assert: card equals: cardDebitedFrom.! !
 
-!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 09:20:10'!
+!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 19:35:42'!
 test06CanNotCheckoutWithAStolenCreditCard
 
 	| cart salesBook card merchantCalledToDebit |
@@ -252,22 +242,46 @@ test06CanNotCheckoutWithAStolenCreditCard
 	card := testObjectsFactory notExpiredCreditCard.
 	salesBook := OrderedCollection new.
 	merchantCalledToDebit := false.
-	debitFromBlock := [ :cardToDebitFrom :totalToDebit |
-		merchantCalledToDebit := true
-	].
-	stolenCreditCardBlock := [ :creditCard |
-		^true
-	].
+	debitFromBlock := [ :cardToDebitFrom :totalToDebit | merchantCalledToDebit := true ].
+	stolenCreditCardBlock := [ :creditCard | true ].
  
 	self
-	should: [ Cashier 
+		should: [ Cashier 
+			toCheckout: cart 
+			charging: card
+			on: testObjectsFactory today
+			registeringOn: salesBook
+			debitingOn: self ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError | self assert: anError messageText = Cashier canNotChargeAStolenCreditCardErrorMessage ].
+	
+	self assert: salesBook isEmpty.
+	self assert: merchantCalledToDebit not.! !
+
+!CashierTest methodsFor: 'testing' stamp: 'JA 6/12/2018 19:47:40'!
+test07CanNotCheckoutIfCreditCardDoesNotHaveEnoughFunds
+
+	| cart salesBook card merchantCalledToDebit cashier |
+
+	cart := testObjectsFactory createCart.
+	cart add: testObjectsFactory itemSellByTheStore.
+	card := testObjectsFactory notExpiredCreditCard.
+	salesBook := OrderedCollection new.
+	merchantCalledToDebit := false.
+	debitFromBlock := [ :cardToDebitFrom :totalToDebit | merchantCalledToDebit := true ].
+	sufficientFundsOnCreditCardBlock := [ :funds :creditCard | false ].
+
+	cashier := Cashier 
 		toCheckout: cart 
 		charging: card
 		on: testObjectsFactory today
 		registeringOn: salesBook
-		debitingOn: self ]
-	raise: Error - MessageNotUnderstood
-	withExceptionDo: [ :anError | self assert: anError messageText = Cashier canNotChargeAStolenCreditCardErrorMessage ].
+		debitingOn: self.
+
+	self
+		should: [ cashier checkOut ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError | self assert: anError messageText = Cashier canNotChargeACreditCardWithInsufficientFundsMessage ].
 	
 	self assert: salesBook isEmpty.
 	self assert: merchantCalledToDebit not.! !
@@ -277,9 +291,13 @@ test06CanNotCheckoutWithAStolenCreditCard
 debitFrom: aCreditCard amount: anAmount
 	debitFromBlock value: aCreditCard value: anAmount.! !
 
-!CashierTest methodsFor: 'simulating' stamp: 'JA 6/12/2018 09:20:01'!
+!CashierTest methodsFor: 'simulating' stamp: 'JA 6/12/2018 19:32:17'!
 isStolen: aCreditCard
-	stolenCreditCardBlock value: aCreditCard.! !
+	^stolenCreditCardBlock value: aCreditCard.! !
+
+!CashierTest methodsFor: 'simulating' stamp: 'JA 6/12/2018 19:44:58'!
+sufficientFunds: funds on: creditCard
+	^sufficientFundsOnCreditCardBlock value: funds value: creditCard.! !
 
 
 !classDefinition: #Cart category: #TusLibros!
@@ -373,21 +391,21 @@ acceptingItemsOf: aCatalog
 
 !classDefinition: #Cashier category: #TusLibros!
 Object subclass: #Cashier
-	instanceVariableNames: 'cart creditCart salesBook merchantProcessor'
+	instanceVariableNames: 'cart creditCard salesBook merchantProcessor'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Cashier methodsFor: 'initialization' stamp: 'MC 6/11/2018 20:55:20'!
+!Cashier methodsFor: 'initialization' stamp: 'JA 6/12/2018 19:09:31'!
 initializeToCheckout: aCart charging: aCreditCard registeringOn: aSalesBook debitingOn: aMerchantProcessor
 	
 	cart := aCart.
-	creditCart := aCreditCard.
+	creditCard := aCreditCard.
 	salesBook := aSalesBook.
 	merchantProcessor := aMerchantProcessor.! !
 
 
-!Cashier methodsFor: 'checkout' stamp: 'JA 6/12/2018 08:18:15'!
+!Cashier methodsFor: 'checkout' stamp: 'JA 6/12/2018 19:44:47'!
 checkOut
 	
 	| priceList total |
@@ -396,10 +414,17 @@ checkOut
 	total := 0.
 	cart itemsDo: [ :anItem | total := total + (priceList at: anItem) ].
 
-	merchantProcessor debitFrom: creditCart amount: total.
+	self assertSufficientFunds: total onCreditCard: creditCard.
+
+	merchantProcessor debitFrom: creditCard amount: total.
 	salesBook add: (Sale of: total).
 	
 	^total! !
+
+
+!Cashier methodsFor: 'assertions' stamp: 'JA 6/12/2018 19:44:42'!
+assertSufficientFunds: funds onCreditCard: creditCard
+	(merchantProcessor sufficientFunds: funds on: creditCard) ifFalse: [ self error: self class canNotChargeACreditCardWithInsufficientFundsMessage ].! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -432,6 +457,10 @@ assertMerchantProcessor: aMerchantProcessor doesNotReportStolen: aCreditCard.
 	
 	(aMerchantProcessor isStolen: aCreditCard) ifTrue: [ self error: self canNotChargeAStolenCreditCardErrorMessage ]! !
 
+
+!Cashier class methodsFor: 'error messages' stamp: 'JA 6/12/2018 19:20:17'!
+canNotChargeACreditCardWithInsufficientFundsMessage
+	^'Can not charge a credit card with insufficient funds'.! !
 
 !Cashier class methodsFor: 'error messages' stamp: 'JA 6/12/2018 09:09:53'!
 canNotChargeAStolenCreditCardErrorMessage
