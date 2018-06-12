@@ -91,6 +91,20 @@ test08CartRemembersTheNumberOfAddedItems
 	cart add: 2 of: testObjectsFactory itemSellByTheStore.
 	self assert: (cart occurrencesOf: testObjectsFactory itemSellByTheStore) = 2! !
 
+!CartTest methodsFor: 'tests' stamp: 'JA 6/12/2018 08:17:18'!
+test09CanNotAddNonIntegerNumberOfItems
+
+	| cart |
+	
+	cart := testObjectsFactory createCart.
+	
+	self 
+		should: [cart add: 1.5 of: testObjectsFactory itemSellByTheStore ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = cart invalidQuantityErrorMessage.
+			self assert: cart isEmpty ]! !
+
 
 !CartTest methodsFor: 'setup' stamp: 'HernanWilkinson 6/17/2013 18:09'!
 setUp 
@@ -105,13 +119,13 @@ TestCase subclass: #CashierTest
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!CashierTest methodsFor: 'as yet unclassified' stamp: 'MC 6/11/2018 20:59:28'!
+!CashierTest methodsFor: 'testing' stamp: 'MC 6/11/2018 20:59:28'!
 setUp 
 
 	testObjectsFactory := StoreTestObjectsFactory new.
 	debitFromBlock := [:p1 :p2 | ].! !
 
-!CashierTest methodsFor: 'as yet unclassified' stamp: 'MC 6/11/2018 21:00:14'!
+!CashierTest methodsFor: 'testing' stamp: 'MC 6/11/2018 21:00:14'!
 test01CanNotCheckoutAnEmptyCart
 
 	| salesBook |
@@ -129,7 +143,7 @@ test01CanNotCheckoutAnEmptyCart
 			self assert: anError messageText = Cashier cartCanNotBeEmptyErrorMessage.
 			self assert: salesBook isEmpty ]! !
 
-!CashierTest methodsFor: 'as yet unclassified' stamp: 'MC 6/11/2018 20:56:50'!
+!CashierTest methodsFor: 'testing' stamp: 'MC 6/11/2018 20:56:50'!
 test02CalculatedTotalIsCorrect
 
 	| cart cashier |
@@ -145,7 +159,7 @@ test02CalculatedTotalIsCorrect
 		debitingOn: self.
 	self assert: cashier checkOut = (testObjectsFactory itemSellByTheStorePrice * 2)! !
 
-!CashierTest methodsFor: 'as yet unclassified' stamp: 'MC 6/11/2018 21:00:19'!
+!CashierTest methodsFor: 'testing' stamp: 'MC 6/11/2018 21:00:19'!
 test03CanNotCheckoutWithAnExpiredCreditCart
 
 	| cart salesBook |
@@ -166,7 +180,7 @@ test03CanNotCheckoutWithAnExpiredCreditCart
 			self assert: anError messageText = Cashier canNotChargeAnExpiredCreditCardErrorMessage.
 			self assert: salesBook isEmpty ]! !
 
-!CashierTest methodsFor: 'as yet unclassified' stamp: 'MC 6/11/2018 21:00:32'!
+!CashierTest methodsFor: 'testing' stamp: 'MC 6/11/2018 21:00:32'!
 test04CheckoutRegistersASale
 
 	| cart cashier salesBook total |
@@ -186,7 +200,7 @@ test04CheckoutRegistersASale
 	self assert: salesBook notEmpty.
 	self assert: salesBook first total = total.! !
 
-!CashierTest methodsFor: 'as yet unclassified' stamp: 'MC 6/11/2018 20:54:43'!
+!CashierTest methodsFor: 'testing' stamp: 'MC 6/11/2018 20:54:43'!
 test05CheckoutSendsTransactionToMerchantProcessor
 
 	| cart cashier salesBook cardDebitedFrom total totalDebited card |
@@ -240,18 +254,23 @@ assertIsValidItem: anItem
 
 	(catalog includesKey: anItem) ifFalse: [ self error: self invalidItemErrorMessage ]! !
 
-!Cart methodsFor: 'assertions' stamp: 'HernanWilkinson 6/17/2013 17:51'!
+!Cart methodsFor: 'assertions' stamp: 'JA 6/12/2018 08:15:48'!
 assertIsValidQuantity: aQuantity
 
-	aQuantity strictlyPositive ifFalse: [ self error: self invalidQuantityErrorMessage ]! !
+	(aQuantity strictlyPositive and: [ aQuantity isInteger ]) ifFalse: [ self error: self invalidQuantityErrorMessage ]! !
 
 
-!Cart methodsFor: 'initialization' stamp: 'HernanWilkinson 6/17/2013 17:48'!
+!Cart methodsFor: 'initialization' stamp: 'JA 6/12/2018 08:12:50'!
 initializeAcceptingItemsOf: aCatalog
 
 	catalog := aCatalog.
-	items := OrderedCollection new.! !
+	items := Bag new.! !
 
+
+!Cart methodsFor: 'queries' stamp: 'HernanWilkinson 6/17/2013 18:04'!
+catalog
+	
+	^ catalog! !
 
 !Cart methodsFor: 'queries' stamp: 'HernanWilkinson 6/17/2013 17:45'!
 occurrencesOf: anItem
@@ -270,12 +289,7 @@ isEmpty
 	^items isEmpty ! !
 
 
-!Cart methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:04'!
-catalog
-	
-	^ catalog! !
-
-!Cart methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:05'!
+!Cart methodsFor: 'enumerating' stamp: 'HernanWilkinson 6/17/2013 18:05'!
 itemsDo: aBlock
 	
 	^items do: aBlock ! !
@@ -286,13 +300,13 @@ add: anItem
 
 	^ self add: 1 of: anItem ! !
 
-!Cart methodsFor: 'adding' stamp: 'HernanWilkinson 6/17/2013 17:51'!
+!Cart methodsFor: 'adding' stamp: 'JA 6/12/2018 08:13:52'!
 add: aQuantity of: anItem
 
 	self assertIsValidQuantity: aQuantity.
 	self assertIsValidItem: anItem.
 
-	1 to: aQuantity do: [ :aNumber | items add: anItem ]! !
+	items add: anItem withOccurrences: aQuantity.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -313,27 +327,28 @@ Object subclass: #Cashier
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'MC 6/11/2018 20:57:48'!
-checkOut
-	
-	| priceList total |
-	
-	priceList := cart catalog.
-	total := 0.
-	cart itemsDo: [ :anItem | total := total + (priceList at: anItem)].
-
-	merchantProcessor debitFrom: creditCart amount: total.
-	salesBook add: (Sale of: total).
-	
-	^total! !
-
-!Cashier methodsFor: 'as yet unclassified' stamp: 'MC 6/11/2018 20:55:20'!
+!Cashier methodsFor: 'initialization' stamp: 'MC 6/11/2018 20:55:20'!
 initializeToCheckout: aCart charging: aCreditCard registeringOn: aSalesBook debitingOn: aMerchantProcessor
 	
 	cart := aCart.
 	creditCart := aCreditCard.
 	salesBook := aSalesBook.
 	merchantProcessor := aMerchantProcessor.! !
+
+
+!Cashier methodsFor: 'checkout' stamp: 'JA 6/12/2018 08:18:15'!
+checkOut
+	
+	| priceList total |
+	
+	priceList := cart catalog.
+	total := 0.
+	cart itemsDo: [ :anItem | total := total + (priceList at: anItem) ].
+
+	merchantProcessor debitFrom: creditCart amount: total.
+	salesBook add: (Sale of: total).
+	
+	^total! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -350,10 +365,10 @@ toCheckout: aCart charging: aCreditCard on: aDate registeringOn: aSalesBook debi
 	^self new initializeToCheckout: aCart charging: aCreditCard registeringOn: aSalesBook debitingOn: aMerchantProcessor.! !
 
 
-!Cashier class methodsFor: 'assertions' stamp: 'HernanWilkinson 6/17/2013 18:22'!
+!Cashier class methodsFor: 'assertions' stamp: 'JA 6/12/2018 08:18:57'!
 assertIsNotEmpty: aCart 
 	
-	aCart isEmpty ifTrue: [self error: self cartCanNotBeEmptyErrorMessage ]! !
+	aCart isEmpty ifTrue: [ self error: self cartCanNotBeEmptyErrorMessage ]! !
 
 !Cashier class methodsFor: 'assertions' stamp: 'HernanWilkinson 6/17/2013 18:23'!
 assertIsNotExpired: aCreditCard on: aDate
@@ -379,15 +394,18 @@ Object subclass: #CreditCard
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!CreditCard methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:38'!
+!CreditCard methodsFor: 'queries' stamp: 'JA 6/12/2018 08:45:57'!
+isExpiredOn: aDate 
+	
+	^expiration < aDate monthOfYear
+	
+	"^expiration start < (Month month: aDate monthIndex year: aDate yearNumber) start "! !
+
+
+!CreditCard methodsFor: 'initialization' stamp: 'HernanWilkinson 6/17/2013 18:38'!
 initializeExpiringOn: aMonth 
 	
 	expiration := aMonth ! !
-
-!CreditCard methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:39'!
-isExpiredOn: aDate 
-	
-	^expiration start < (Month month: aDate monthIndex year: aDate yearNumber) start ! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -395,28 +413,10 @@ isExpiredOn: aDate
 CreditCard class
 	instanceVariableNames: ''!
 
-!CreditCard class methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:38'!
+!CreditCard class methodsFor: 'instance creation' stamp: 'HernanWilkinson 6/17/2013 18:38'!
 expiringOn: aMonth 
 	
 	^self new initializeExpiringOn: aMonth! !
-
-
-!classDefinition: #MonthOfYear category: #TusLibros!
-Object subclass: #MonthOfYear
-	instanceVariableNames: ''
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'TusLibros'!
-
-"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
-
-!classDefinition: 'MonthOfYear class' category: #TusLibros!
-MonthOfYear class
-	instanceVariableNames: ''!
-
-!MonthOfYear class methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:34'!
-of: aDate 
-	self shouldBeImplemented.! !
 
 
 !classDefinition: #Sale category: #TusLibros!
@@ -426,7 +426,7 @@ Object subclass: #Sale
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Sale methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:48'!
+!Sale methodsFor: 'inspection' stamp: 'HernanWilkinson 6/17/2013 18:48'!
 total
 	
 	^ total! !
@@ -470,25 +470,17 @@ defaultCatalog
 		yourself ! !
 
 
-!StoreTestObjectsFactory methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:37'!
+!StoreTestObjectsFactory methodsFor: 'credit card' stamp: 'JA 6/12/2018 08:44:39'!
 expiredCreditCard
-	
-	^CreditCard expiringOn: (Month month: today monthIndex year: today yearNumber - 1)! !
+	| expirationDate |
+	expirationDate _ today monthOfYear previousMonth: GregorianMonth january.
+	^CreditCard expiringOn: expirationDate.! !
 
-!StoreTestObjectsFactory methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:37'!
-initialize
-
-	today := DateAndTime now! !
-
-!StoreTestObjectsFactory methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:36'!
+!StoreTestObjectsFactory methodsFor: 'credit card' stamp: 'JA 6/12/2018 08:44:33'!
 notExpiredCreditCard
-	
-	^CreditCard expiringOn: (Month month: today monthIndex year: today yearNumber + 1)! !
-
-!StoreTestObjectsFactory methodsFor: 'as yet unclassified' stamp: 'HernanWilkinson 6/17/2013 18:37'!
-today
-	
-	^ today! !
+	| expirationDate |
+	expirationDate _ today monthOfYear nextMonth: GregorianMonth january.
+	^CreditCard expiringOn: expirationDate.! !
 
 
 !StoreTestObjectsFactory methodsFor: 'items' stamp: 'HernanWilkinson 6/17/2013 18:08'!
@@ -505,3 +497,15 @@ itemSellByTheStore
 itemSellByTheStorePrice
 	
 	^10! !
+
+
+!StoreTestObjectsFactory methodsFor: 'initialize' stamp: 'JA 6/12/2018 08:30:51'!
+initialize
+
+	today := FixedGregorianDate today.! !
+
+
+!StoreTestObjectsFactory methodsFor: 'inspection' stamp: 'HernanWilkinson 6/17/2013 18:37'!
+today
+	
+	^ today! !
