@@ -246,6 +246,34 @@ debit: anAmount from: aCreditCard
 	^debitBehavior value: anAmount value: aCreditCard ! !
 
 
+!classDefinition: #RestApiTest category: #TusLibros!
+TestCase subclass: #RestApiTest
+	instanceVariableNames: 'testObjectsFactory'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TusLibros'!
+
+!RestApiTest methodsFor: 'setup' stamp: 'MC 6/16/2018 14:01:42'!
+setUp 
+
+	testObjectsFactory := StoreTestObjectsFactory new.! !
+
+
+!RestApiTest methodsFor: 'testing' stamp: 'MC 6/16/2018 14:30:27'!
+test01CreateCartWithValidClientIdAndPassword
+	| api cartId clients cartsStore |
+	clients _ testObjectsFactory defaultClients.
+	cartsStore _ Dictionary new.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: clients
+		storingOn: cartsStore.
+	cartId _ api
+		createCartFor: testObjectsFactory activeClient
+		with: testObjectsFactory activeClientPassword.
+	self assert: (cartsStore includesKey: cartId).! !
+
+
 !classDefinition: #Cart category: #TusLibros!
 Object subclass: #Cart
 	instanceVariableNames: 'catalog items'
@@ -451,6 +479,36 @@ expiringOn: aMonth
 	^self new initializeExpiringOn: aMonth! !
 
 
+!classDefinition: #RestApi category: #TusLibros!
+Object subclass: #RestApi
+	instanceVariableNames: 'catalog clients cartsStore'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TusLibros'!
+
+!RestApi methodsFor: 'api' stamp: 'MC 6/16/2018 14:31:10'!
+createCartFor: clientId with: password
+	cartsStore at: 'cart id' put: 'cart'.
+	^'cart id'.! !
+
+
+!RestApi methodsFor: 'initialization' stamp: 'MC 6/16/2018 14:29:46'!
+withCatalog: aCatalog andClients: someClients storingOn: aCartsStore
+	catalog := aCatalog.
+	clients := someClients.
+	cartsStore := aCartsStore.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'RestApi class' category: #TusLibros!
+RestApi class
+	instanceVariableNames: ''!
+
+!RestApi class methodsFor: 'api' stamp: 'MC 6/16/2018 14:29:04'!
+forCatalog: aCatalog andClients: clients storingOn: cartsStore
+	^self new withCatalog: aCatalog andClients: clients storingOn: cartsStore! !
+
+
 !classDefinition: #Sale category: #TusLibros!
 Object subclass: #Sale
 	instanceVariableNames: 'total'
@@ -539,3 +597,19 @@ initialize
 today
 	
 	^ today! !
+
+
+!StoreTestObjectsFactory methodsFor: 'clients' stamp: 'MC 6/16/2018 14:15:33'!
+activeClient
+	^ 'client id'.! !
+
+!StoreTestObjectsFactory methodsFor: 'clients' stamp: 'MC 6/16/2018 14:18:15'!
+activeClientPassword
+	^ 'client password'.! !
+
+!StoreTestObjectsFactory methodsFor: 'clients' stamp: 'MC 6/16/2018 14:18:34'!
+defaultClients
+	^ Dictionary new
+			at: self activeClient
+			put: self activeClientPassword;
+		yourself.! !
