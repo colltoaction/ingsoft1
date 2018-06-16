@@ -259,19 +259,72 @@ setUp
 	testObjectsFactory := StoreTestObjectsFactory new.! !
 
 
-!RestApiTest methodsFor: 'testing' stamp: 'MC 6/16/2018 14:30:27'!
+!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/16/2018 14:43:09'!
 test01CreateCartWithValidClientIdAndPassword
-	| api cartId clients cartsStore |
-	clients _ testObjectsFactory defaultClients.
+	| api cartId cartsStore |
 	cartsStore _ Dictionary new.
 	api _ RestApi
 		forCatalog: testObjectsFactory defaultCatalog
-		andClients: clients
+		andClients: testObjectsFactory defaultClients
 		storingOn: cartsStore.
 	cartId _ api
 		createCartFor: testObjectsFactory activeClient
 		with: testObjectsFactory activeClientPassword.
 	self assert: (cartsStore includesKey: cartId).! !
+
+!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/16/2018 14:43:24'!
+test02CannotCreateCartWithValidClientIdAndInvalidPassword
+	| api cartsStore |
+	cartsStore _ Dictionary new.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: testObjectsFactory defaultClients
+		storingOn: cartsStore.
+	self
+		should: [
+			api
+				createCartFor: testObjectsFactory activeClient
+				with: 'invalid password' ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = RestApi invalidClientIdOrPasswordMessage.
+			self assert: cartsStore isEmpty ].! !
+
+!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/16/2018 14:46:24'!
+test03CannotCreateCartWithInvalidClientId
+	| api cartsStore |
+	cartsStore _ Dictionary new.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: testObjectsFactory defaultClients
+		storingOn: cartsStore.
+	self
+		should: [
+			api
+				createCartFor: 'invalid client id'
+				with: testObjectsFactory activeClientPassword ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = RestApi invalidClientIdOrPasswordMessage.
+			self assert: cartsStore isEmpty ].! !
+
+
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/16/2018 14:57:58'!
+test04AddToCartWithValidIdAndParameters
+	| api cartsStore cart |
+	cart _ testObjectsFactory createCart.
+	cartsStore _ Dictionary new
+		at: 'cart id' put: cart;
+		yourself.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: testObjectsFactory defaultClients
+		storingOn: cartsStore.
+	api
+		addToCart: 'cart id'
+		bookIsbn: testObjectsFactory itemSellByTheStore
+		quantity: 2.
+	self assert: 2 equals: (cart occurrencesOf: testObjectsFactory itemSellByTheStore).	! !
 
 
 !classDefinition: #Cart category: #TusLibros!
@@ -486,10 +539,19 @@ Object subclass: #RestApi
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!RestApi methodsFor: 'api' stamp: 'MC 6/16/2018 14:31:10'!
+!RestApi methodsFor: 'api' stamp: 'MC 6/16/2018 15:08:17'!
+addToCart: cartId bookIsbn: isbn quantity: quantity
+	(cartsStore includesKey: cartId) ifFalse: [ self error: self class invalidCartIdMessage ].
+	(cartsStore at: cartId) add: quantity of: isbn.! !
+
+!RestApi methodsFor: 'api' stamp: 'MC 6/16/2018 14:45:56'!
 createCartFor: clientId with: password
-	cartsStore at: 'cart id' put: 'cart'.
-	^'cart id'.! !
+	(clients includesKey: clientId) ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
+	(clients at: clientId) = password ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
+	cartsStore
+		at: 'cart id'
+		put: 'cart'.
+	^ 'cart id'.! !
 
 
 !RestApi methodsFor: 'initialization' stamp: 'MC 6/16/2018 14:29:46'!
@@ -507,6 +569,11 @@ RestApi class
 !RestApi class methodsFor: 'api' stamp: 'MC 6/16/2018 14:29:04'!
 forCatalog: aCatalog andClients: clients storingOn: cartsStore
 	^self new withCatalog: aCatalog andClients: clients storingOn: cartsStore! !
+
+
+!RestApi class methodsFor: 'error handling' stamp: 'MC 6/16/2018 14:42:22'!
+invalidClientIdOrPasswordMessage
+	^ 'El id del cliente o su contraseña fueron incorrectos'.! !
 
 
 !classDefinition: #Sale category: #TusLibros!
