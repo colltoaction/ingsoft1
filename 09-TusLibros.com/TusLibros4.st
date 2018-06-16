@@ -10,7 +10,7 @@ test01NewCartsAreCreatedEmpty
 
 	self assert: testObjectsFactory createCart isEmpty! !
 
-!CartTest methodsFor: 'tests' stamp: 'HernanWilkinson 6/17/2013 18:10'!
+!CartTest methodsFor: 'tests' stamp: 'MC 6/16/2018 15:15:42'!
 test02CanNotAddItemsThatDoNotBelongToStore
 
 	| cart |
@@ -259,23 +259,24 @@ setUp
 	testObjectsFactory := StoreTestObjectsFactory new.! !
 
 
-!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/16/2018 14:43:09'!
+!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/16/2018 15:31:17'!
 test01CreateCartWithValidClientIdAndPassword
 	| api cartId cartsStore |
-	cartsStore _ Dictionary new.
+	cartsStore _ CartsStore new.
 	api _ RestApi
 		forCatalog: testObjectsFactory defaultCatalog
 		andClients: testObjectsFactory defaultClients
 		storingOn: cartsStore.
 	cartId _ api
 		createCartFor: testObjectsFactory activeClient
-		with: testObjectsFactory activeClientPassword.
+		with: testObjectsFactory activeClientPassword
+		on: testObjectsFactory now.
 	self assert: (cartsStore includesKey: cartId).! !
 
-!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/16/2018 14:43:24'!
+!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/16/2018 15:31:48'!
 test02CannotCreateCartWithValidClientIdAndInvalidPassword
 	| api cartsStore |
-	cartsStore _ Dictionary new.
+	cartsStore _ CartsStore new.
 	api _ RestApi
 		forCatalog: testObjectsFactory defaultCatalog
 		andClients: testObjectsFactory defaultClients
@@ -284,16 +285,17 @@ test02CannotCreateCartWithValidClientIdAndInvalidPassword
 		should: [
 			api
 				createCartFor: testObjectsFactory activeClient
-				with: 'invalid password' ]
+				with: 'invalid password'
+				on: testObjectsFactory now ]
 		raise: Error - MessageNotUnderstood
 		withExceptionDo: [ :anError |
 			self assert: anError messageText = RestApi invalidClientIdOrPasswordMessage.
 			self assert: cartsStore isEmpty ].! !
 
-!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/16/2018 14:46:24'!
+!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/16/2018 15:32:32'!
 test03CannotCreateCartWithInvalidClientId
 	| api cartsStore |
-	cartsStore _ Dictionary new.
+	cartsStore _ CartsStore new.
 	api _ RestApi
 		forCatalog: testObjectsFactory defaultCatalog
 		andClients: testObjectsFactory defaultClients
@@ -302,19 +304,20 @@ test03CannotCreateCartWithInvalidClientId
 		should: [
 			api
 				createCartFor: 'invalid client id'
-				with: testObjectsFactory activeClientPassword ]
+				with: testObjectsFactory activeClientPassword
+				on: testObjectsFactory now ]
 		raise: Error - MessageNotUnderstood
 		withExceptionDo: [ :anError |
 			self assert: anError messageText = RestApi invalidClientIdOrPasswordMessage.
 			self assert: cartsStore isEmpty ].! !
 
 
-!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/16/2018 14:57:58'!
-test04AddToCartWithValidIdAndParameters
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/16/2018 15:33:21'!
+test04AddToCartWithValidParameters
 	| api cartsStore cart |
 	cart _ testObjectsFactory createCart.
-	cartsStore _ Dictionary new
-		at: 'cart id' put: cart;
+	cartsStore _ CartsStore new
+		at: 'cart id' put: cart on: testObjectsFactory now;
 		yourself.
 	api _ RestApi
 		forCatalog: testObjectsFactory defaultCatalog
@@ -323,8 +326,101 @@ test04AddToCartWithValidIdAndParameters
 	api
 		addToCart: 'cart id'
 		bookIsbn: testObjectsFactory itemSellByTheStore
-		quantity: 2.
+		quantity: 2
+		on: testObjectsFactory now.
 	self assert: 2 equals: (cart occurrencesOf: testObjectsFactory itemSellByTheStore).	! !
+
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/16/2018 15:48:51'!
+test05CannotAddToCartWithInvalidCartId
+	| api cartsStore cart |
+	cart _ testObjectsFactory createCart.
+	cartsStore _ CartsStore new
+		at: 'cart id' put: cart on: testObjectsFactory now;
+		yourself.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: testObjectsFactory defaultClients
+		storingOn: cartsStore.
+	self
+		should: [
+			api
+				addToCart: 'invalid cart id'
+				bookIsbn: testObjectsFactory itemSellByTheStore
+				quantity: 2
+				on: testObjectsFactory now ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = CartsStore invalidCartIdMessage.
+			self assert: cart isEmpty ].! !
+
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/16/2018 15:36:42'!
+test06CannotAddToCartInvalidIsbn
+	| api cartsStore cart |
+	cart _ testObjectsFactory createCart.
+	cartsStore _ CartsStore new
+		at: 'cart id' put: cart on: testObjectsFactory now;
+		yourself.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: testObjectsFactory defaultClients
+		storingOn: cartsStore.
+	self
+		should: [
+			api
+				addToCart: 'cart id'
+				bookIsbn: 'invalid isbn'
+				quantity: 2
+				on: testObjectsFactory now ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = cart invalidItemErrorMessage.
+			self assert: cart isEmpty ].! !
+
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/16/2018 15:36:59'!
+test07CannotAddToCartInvalidQuantity
+	| api cartsStore cart |
+	cart _ testObjectsFactory createCart.
+	cartsStore _ CartsStore new
+		at: 'cart id' put: cart on: testObjectsFactory now;
+		yourself.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: testObjectsFactory defaultClients
+		storingOn: cartsStore.
+	self
+		should: [
+			api
+				addToCart: 'cart id'
+				bookIsbn: testObjectsFactory itemSellByTheStore
+				quantity: -42
+				on: testObjectsFactory now ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = cart invalidQuantityErrorMessage.
+			self assert: cart isEmpty ].! !
+
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/16/2018 15:42:59'!
+test08CannotAddToCartAfter30Minutes
+	| api cartsStore cart |
+	cart _ testObjectsFactory createCart.
+	cartsStore _ CartsStore new
+		at: 'cart id' put: cart on: testObjectsFactory now;
+		yourself.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: testObjectsFactory defaultClients
+		storingOn: cartsStore.
+	self
+		should: [
+			api
+				addToCart: 'cart id'
+				bookIsbn: testObjectsFactory itemSellByTheStore
+				quantity: 7
+				on: testObjectsFactory now + 31 minutes ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = CartsStore cartIdIsExpired.
+			self assert: cart isEmpty ].! !
 
 
 !classDefinition: #Cart category: #TusLibros!
@@ -345,7 +441,7 @@ invalidQuantityErrorMessage
 	^'Invalid number of items'! !
 
 
-!Cart methodsFor: 'assertions' stamp: 'HernanWilkinson 6/17/2013 18:06'!
+!Cart methodsFor: 'assertions' stamp: 'MC 6/16/2018 15:15:49'!
 assertIsValidItem: anItem
 
 	(catalog includesKey: anItem) ifFalse: [ self error: self invalidItemErrorMessage ]! !
@@ -409,6 +505,57 @@ Cart class
 acceptingItemsOf: aCatalog
 
 	^self new initializeAcceptingItemsOf: aCatalog ! !
+
+
+!classDefinition: #CartsStore category: #TusLibros!
+Object subclass: #CartsStore
+	instanceVariableNames: 'carts'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TusLibros'!
+
+!CartsStore methodsFor: 'accessing' stamp: 'MC 6/16/2018 15:48:05'!
+at: cartId on: currentTime
+	| lastUsageTime |
+	(carts includesKey: cartId) ifFalse: [
+		self error: self class invalidCartIdMessage
+	].
+	lastUsageTime _ (carts at: cartId) key.
+	currentTime > (lastUsageTime + 30 minutes) ifTrue: [
+		self error: self class cartIdIsExpired.
+	].
+	^ (carts at: cartId) value.! !
+
+!CartsStore methodsFor: 'accessing' stamp: 'MC 6/16/2018 15:29:35'!
+at: cartId put: cart on: currentTime
+	carts at: cartId put: (currentTime -> cart).! !
+
+!CartsStore methodsFor: 'accessing' stamp: 'MC 6/16/2018 15:30:59'!
+includesKey: cartId
+	^ carts includesKey: cartId.! !
+
+!CartsStore methodsFor: 'accessing' stamp: 'MC 6/16/2018 15:32:06'!
+isEmpty
+	^ carts isEmpty.! !
+
+
+!CartsStore methodsFor: 'initialization' stamp: 'MC 6/16/2018 15:30:09'!
+initialize
+	carts _ Dictionary new.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'CartsStore class' category: #TusLibros!
+CartsStore class
+	instanceVariableNames: ''!
+
+!CartsStore class methodsFor: 'error handling' stamp: 'MC 6/16/2018 15:46:23'!
+cartIdIsExpired
+	^ 'El carrito asociado a este id ha expirado'.! !
+
+!CartsStore class methodsFor: 'error handling' stamp: 'MC 6/16/2018 15:49:11'!
+invalidCartIdMessage
+	^ 'El id del carrito es inválido'! !
 
 
 !classDefinition: #Cashier category: #TusLibros!
@@ -539,18 +686,18 @@ Object subclass: #RestApi
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!RestApi methodsFor: 'api' stamp: 'MC 6/16/2018 15:08:17'!
-addToCart: cartId bookIsbn: isbn quantity: quantity
-	(cartsStore includesKey: cartId) ifFalse: [ self error: self class invalidCartIdMessage ].
-	(cartsStore at: cartId) add: quantity of: isbn.! !
+!RestApi methodsFor: 'api' stamp: 'MC 6/16/2018 15:47:31'!
+addToCart: cartId bookIsbn: isbn quantity: quantity on: creationTime
+	(cartsStore at: cartId on: creationTime) add: quantity of: isbn.! !
 
-!RestApi methodsFor: 'api' stamp: 'MC 6/16/2018 14:45:56'!
-createCartFor: clientId with: password
+!RestApi methodsFor: 'api' stamp: 'MC 6/16/2018 15:23:23'!
+createCartFor: clientId with: password on: creationTime
 	(clients includesKey: clientId) ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
 	(clients at: clientId) = password ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
 	cartsStore
 		at: 'cart id'
-		put: 'cart'.
+		put: 'cart'
+		on: creationTime.
 	^ 'cart id'.! !
 
 
@@ -609,7 +756,7 @@ of: aTotal
 
 !classDefinition: #StoreTestObjectsFactory category: #TusLibros!
 Object subclass: #StoreTestObjectsFactory
-	instanceVariableNames: 'today'
+	instanceVariableNames: 'today now'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
@@ -654,11 +801,17 @@ notExpiredCreditCard
 	^CreditCard expiringOn: (Month month: today monthIndex year: today yearNumber + 1)! !
 
 
-!StoreTestObjectsFactory methodsFor: 'initialization' stamp: 'HernanWilkinson 6/17/2013 18:37'!
+!StoreTestObjectsFactory methodsFor: 'initialization' stamp: 'MC 6/16/2018 15:25:08'!
 initialize
 
-	today := DateAndTime now! !
+	today := DateAndTime now.
+	now := DateAndTime now.! !
 
+
+!StoreTestObjectsFactory methodsFor: 'date' stamp: 'MC 6/16/2018 15:24:41'!
+now
+	
+	^ now! !
 
 !StoreTestObjectsFactory methodsFor: 'date' stamp: 'HernanWilkinson 6/17/2013 18:37'!
 today
