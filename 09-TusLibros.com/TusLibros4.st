@@ -499,6 +499,77 @@ test09ListCartReturnsCartItemsCorrectly
 	self assert: (itemList at: testObjectsFactory itemSellByTheStore) equals: 1.
 	self assert: (itemList at: testObjectsFactory anotherItemSellByTheStore) equals: 2.! !
 
+!RestApiTest methodsFor: 'testing-list cart' stamp: 'JA 6/17/2018 18:21:38'!
+test10CannotListInvalidIdCart
+	| api cartsStore cart |
+	cart _ testObjectsFactory createCart.
+	cart add: 1 of: testObjectsFactory itemSellByTheStore.
+	cart add: 2 of: testObjectsFactory anotherItemSellByTheStore.
+	cartsStore _ CartsStore new
+		at: 'cart id' put: cart on: testObjectsFactory now;
+		yourself.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: testObjectsFactory defaultClients
+		storingOn: cartsStore.
+		
+	self should: [
+		api
+			listCart: 'invalid cart id'
+			on: testObjectsFactory now ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = CartsStore invalidCartIdMessage ].! !
+
+
+!RestApiTest methodsFor: 'testing-checkout cart' stamp: 'JA 6/17/2018 18:49:02'!
+test11SuccessfulCartCheckoutReturnsTransactionId
+	| api cartsStore cart transactionId creditCard |
+	cart _ testObjectsFactory createCart.
+	cart add: 1 of: testObjectsFactory itemSellByTheStore.
+	cartsStore _ CartsStore new
+		at: 'cart id' put: cart on: testObjectsFactory now;
+		yourself.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: testObjectsFactory defaultClients
+		storingOn: cartsStore.
+	creditCard _ testObjectsFactory notExpiredCreditCard.
+	
+	transactionId _ api
+		checkoutCart: 'cart id'
+		creditCardNumber: creditCard number
+		creditCardExpiration: creditCard expiration asString
+		creditCardOwner: creditCard owner
+		on: testObjectsFactory now.
+		
+	self assert: transactionId > 0.! !
+
+!RestApiTest methodsFor: 'testing-checkout cart' stamp: 'JA 6/17/2018 18:52:47'!
+test12CannotCheckoutWithInvalidCartId
+	| api cartsStore cart creditCard |
+	cart _ testObjectsFactory createCart.
+	cart add: 1 of: testObjectsFactory itemSellByTheStore.
+	cartsStore _ CartsStore new
+		at: 'cart id' put: cart on: testObjectsFactory now;
+		yourself.
+	api _ RestApi
+		forCatalog: testObjectsFactory defaultCatalog
+		andClients: testObjectsFactory defaultClients
+		storingOn: cartsStore.
+	creditCard _ testObjectsFactory notExpiredCreditCard.
+	
+	self should: [
+		api
+			checkoutCart: 'invalid cart id'
+			creditCardNumber: creditCard number
+			creditCardExpiration: creditCard expiration asString
+			creditCardOwner: creditCard owner
+			on: testObjectsFactory now ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = CartsStore invalidCartIdMessage ].! !
+
 
 !classDefinition: #Cart category: #TusLibros!
 Object subclass: #Cart
@@ -540,6 +611,10 @@ initializeAcceptingItemsOf: aCatalog
 catalog
 	
 	^ catalog! !
+
+!Cart methodsFor: 'queries' stamp: 'JA 6/17/2018 18:11:24'!
+items
+	^items.! !
 
 !Cart methodsFor: 'queries' stamp: 'HernanWilkinson 6/17/2013 17:45'!
 occurrencesOf: anItem
@@ -731,7 +806,7 @@ cartCanNotBeEmptyErrorMessage
 
 !classDefinition: #CreditCard category: #TusLibros!
 Object subclass: #CreditCard
-	instanceVariableNames: 'expiration'
+	instanceVariableNames: 'expiration number owner'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
@@ -748,6 +823,19 @@ isExpiredOn: aDate
 initializeExpiringOn: aMonth 
 	
 	expiration := aMonth ! !
+
+
+!CreditCard methodsFor: 'inspecting' stamp: 'JA 6/17/2018 18:49:48'!
+expiration
+	^expiration! !
+
+!CreditCard methodsFor: 'inspecting' stamp: 'JA 6/17/2018 18:49:30'!
+number
+	^number.! !
+
+!CreditCard methodsFor: 'inspecting' stamp: 'JA 6/17/2018 18:50:01'!
+owner
+	^owner.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -772,7 +860,19 @@ Object subclass: #RestApi
 addToCart: cartId bookIsbn: isbn quantity: quantity on: creationTime
 	(cartsStore at: cartId on: creationTime) add: quantity of: isbn.! !
 
-!RestApi methodsFor: 'api' stamp: 'MC 6/16/2018 15:23:23'!
+!RestApi methodsFor: 'api' stamp: 'JA 6/17/2018 19:06:22'!
+checkoutCart: cartId
+creditCardNumber: creditCardNumber
+creditCardExpiration: creditCardExpiration
+creditCardOwner: creditCardOwner
+on: time
+	| cart creditCard |
+	cart _ cartsStore at: cartId on: time.
+	creditCard _ CreditCard of: creditCardOwner withNumber: creditCardNumber withExpiration: creditCardExpiration.
+	"Cashier toCheckout: cart charging:  on:  registeringOn:  debitingOn: checkOut"
+	^cartId.! !
+
+!RestApi methodsFor: 'api' stamp: 'JA 6/17/2018 19:08:59'!
 createCartFor: clientId with: password on: creationTime
 	(clients includesKey: clientId) ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
 	(clients at: clientId) = password ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
@@ -782,11 +882,11 @@ createCartFor: clientId with: password on: creationTime
 		on: creationTime.
 	^ 'cart id'.! !
 
-!RestApi methodsFor: 'api' stamp: 'JA 6/17/2018 17:34:52'!
+!RestApi methodsFor: 'api' stamp: 'JA 6/17/2018 18:12:56'!
 listCart: cartId on: time
 	| cart |
 	cart _ cartsStore at: cartId on: time.
-	^cart items inject: Dictionary new into: [ :list :item | list at: item put: (cart occurrencesOf: item) ].! !
+	^cart items inject: Dictionary new into: [ :list :item | list at: item put: (cart occurrencesOf: item); yourself ].! !
 
 
 !RestApi methodsFor: 'initialization' stamp: 'MC 6/16/2018 14:29:46'!
@@ -854,11 +954,12 @@ createCart
 	
 	^Cart acceptingItemsOf: self defaultCatalog! !
 
-!StoreTestObjectsFactory methodsFor: 'cart' stamp: 'HernanWilkinson 6/17/2013 18:08'!
+!StoreTestObjectsFactory methodsFor: 'cart' stamp: 'JA 6/17/2018 18:08:48'!
 defaultCatalog
 	
 	^ Dictionary new
 		at: self itemSellByTheStore put: self itemSellByTheStorePrice;
+		at: self anotherItemSellByTheStore put: self anotherItemSellByTheStorePrice;
 		yourself ! !
 
 
@@ -874,6 +975,15 @@ notExpiredCreditCard
 	expirationDate _ today monthOfYear nextMonth: GregorianMonth january.
 	^CreditCard expiringOn: expirationDate.! !
 
+
+!StoreTestObjectsFactory methodsFor: 'items' stamp: 'JA 6/17/2018 18:07:56'!
+anotherItemSellByTheStore
+	^'another valid book'.! !
+
+!StoreTestObjectsFactory methodsFor: 'items' stamp: 'JA 6/17/2018 18:09:03'!
+anotherItemSellByTheStorePrice
+	
+	^7! !
 
 !StoreTestObjectsFactory methodsFor: 'items' stamp: 'HernanWilkinson 6/17/2013 18:08'!
 itemNotSellByTheStore
@@ -898,12 +1008,6 @@ initialize
 	now := DateAndTime now.! !
 
 
-!StoreTestObjectsFactory methodsFor: 'inspection' stamp: 'HernanWilkinson 6/17/2013 18:37'!
-today
-	
-	^ today! !
-
-
 !StoreTestObjectsFactory methodsFor: 'clients' stamp: 'JA 6/17/2018 17:59:02'!
 activeClient
 	^'active client'.! !
@@ -923,3 +1027,8 @@ defaultClients
 !StoreTestObjectsFactory methodsFor: 'time' stamp: 'JA 6/17/2018 18:00:22'!
 now
 	^now.! !
+
+!StoreTestObjectsFactory methodsFor: 'time' stamp: 'HernanWilkinson 6/17/2013 18:37'!
+today
+	
+	^ today! !
