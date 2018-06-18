@@ -439,7 +439,7 @@ test07CannotAddToCartInvalidQuantity
 			self assert: cart isEmpty.
 			self assert: anError messageText = cart invalidQuantityErrorMessage. ].! !
 
-!RestApiTest methodsFor: 'testing-add to cart' stamp: 'JA 6/17/2018 21:35:42'!
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'JA 6/18/2018 00:11:32'!
 test08CannotAddToCartAfter30Minutes
 	| api market cart cartId |
 	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
@@ -454,7 +454,7 @@ test08CannotAddToCartAfter30Minutes
 				addToCart: cartId
 				bookIsbn: testObjectsFactory itemSellByTheStore
 				quantity: 7
-				on: (testObjectsFactory now next: (TimeUnits second with: 31)) ]
+				on: (testObjectsFactory now next: (TimeUnits minute with: 31)) ]
 		raise: Error - MessageNotUnderstood
 		withExceptionDo: [ :anError |
 			self assert: anError messageText = CartsStore cartIdIsExpired.
@@ -503,6 +503,28 @@ test10CannotListInvalidIdCart
 		raise: Error - MessageNotUnderstood
 		withExceptionDo: [ :anError |
 			self assert: anError messageText = CartsStore invalidCartIdMessage ].! !
+
+!RestApiTest methodsFor: 'testing-list cart' stamp: 'JA 6/18/2018 00:13:56'!
+test19CannotListCartAfter30Minutes
+	| api cart cartId market |
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
+	api _ RestApi forMarket: market.
+	
+	cartId _ market
+		createCartForClientWithCredentials: testObjectsFactory activeClient -> testObjectsFactory activeClientPassword
+		on: testObjectsFactory now.
+	cart _ market cartWithId: cartId on: testObjectsFactory now.
+	cart add: 1 of: testObjectsFactory itemSellByTheStore.
+	cart add: 2 of: testObjectsFactory anotherItemSellByTheStore.
+
+	self
+		should: [
+			api
+				listCart: cartId
+				on: (testObjectsFactory now next: (TimeUnits minute with: 31)) ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = CartsStore cartIdIsExpired ].! !
 
 
 !RestApiTest methodsFor: 'testing-checkout cart' stamp: 'JA 6/17/2018 21:35:54'!
@@ -599,6 +621,31 @@ test15CannotCheckoutWithCardWithBadOwnerFormat
 		raise: Error - MessageNotUnderstood
 		withExceptionDo: [ :anError |
 			self assert: anError messageText = CreditCard badOwnerFormatMessage ].! !
+
+!RestApiTest methodsFor: 'testing-checkout cart' stamp: 'JA 6/18/2018 00:18:06'!
+test20CannotCheckoutCartAfter30Minutes
+	| api cart cartId market creditCard |
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
+	api _ RestApi forMarket: market.
+	
+	cartId _ market
+		createCartForClientWithCredentials: testObjectsFactory activeClient -> testObjectsFactory activeClientPassword
+		on: testObjectsFactory now.
+	cart _ market cartWithId: cartId on: testObjectsFactory now.
+	cart add: 1 of: testObjectsFactory itemSellByTheStore.		
+		
+	creditCard _ testObjectsFactory notExpiredCreditCard.
+	
+	self should: [
+		api
+			checkoutCart: cartId
+			creditCardNumber: creditCard number
+			creditCardExpiration: (self monthOfYearToApiFormat: creditCard expiration)
+			creditCardOwner: creditCard owner
+			on: (testObjectsFactory now next: (TimeUnits minute with: 31))
+	] raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = CartsStore cartIdIsExpired ].! !
 
 
 !RestApiTest methodsFor: 'private' stamp: 'JA 6/17/2018 21:26:26'!
@@ -795,14 +842,14 @@ Object subclass: #CartsStore
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!CartsStore methodsFor: 'accessing' stamp: 'JA 6/17/2018 21:02:07'!
+!CartsStore methodsFor: 'accessing' stamp: 'JA 6/18/2018 00:12:02'!
 at: cartId on: currentTime
 	| lastUsageTime |
 	(carts includesKey: cartId) ifFalse: [
 		self error: self class invalidCartIdMessage
 	].
 	lastUsageTime _ (carts at: cartId) key.
-	currentTime > (lastUsageTime next: (TimeUnits second with: 30)) ifTrue: [
+	currentTime > (lastUsageTime next: (TimeUnits minute with: 30)) ifTrue: [
 		self error: self class cartIdIsExpired.
 	].
 	^ (carts at: cartId) value.! !
@@ -1104,15 +1151,19 @@ createCartFor: clientId with: password on: creationTime
 	credentials _ clientId -> password.
 	^ market createCartForClientWithCredentials: credentials on: creationTime.! !
 
-!RestApi methodsFor: 'api' stamp: 'MC 6/17/2018 20:35:48'!
+!RestApi methodsFor: 'api' stamp: 'JA 6/18/2018 00:23:48'!
 listCart: cartId on: currentTime
-	| cart |
+	| cart list |
 	cart _ market cartWithId: cartId on: currentTime.
-	^cart items inject: Dictionary new into: [ :list :item | list at: item put: (cart occurrencesOf: item); yourself ].! !
+	list _ Dictionary new.
+	cart items do: [ :item | list at: item put: (cart occurrencesOf: item) ].
+	^list.! !
 
-!RestApi methodsFor: 'api' stamp: 'JA 6/17/2018 22:02:33'!
+!RestApi methodsFor: 'api' stamp: 'JA 6/18/2018 00:25:38'!
 listPurchasesOfClient: clientId withPassword: clientPassword
-	^market purchasesOf: (clientId -> clientPassword).! !
+	| credentials |
+	credentials _ clientId -> clientPassword.
+	^market purchasesOf: credentials.! !
 
 
 !RestApi methodsFor: 'initialization' stamp: 'MC 6/17/2018 19:59:15'!
