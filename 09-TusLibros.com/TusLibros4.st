@@ -548,6 +548,58 @@ test12CannotCheckoutWithInvalidCartId
 		withExceptionDo: [ :anError |
 			self assert: anError messageText = CartsStore invalidCartIdMessage ].! !
 
+!RestApiTest methodsFor: 'testing-checkout cart' stamp: 'JA 6/17/2018 23:48:29'!
+test14CannotCheckoutWithCardWithBadExpirationFormat
+	| api market creditCard cart cartId |
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
+	api _ RestApi forMarket: market.
+	
+	cartId _ market
+		createCartForClientWithCredentials: testObjectsFactory activeClient -> testObjectsFactory activeClientPassword
+		on: testObjectsFactory now.
+	cart _ market cartWithId: cartId on: testObjectsFactory now.
+	cart add: 1 of: testObjectsFactory itemSellByTheStore.
+	
+	creditCard _ testObjectsFactory notExpiredCreditCard.
+	
+	self
+		should: [
+			api
+				checkoutCart: cartId 
+				creditCardNumber: creditCard number
+				creditCardExpiration: '1/2017'
+				creditCardOwner: creditCard owner
+				on: testObjectsFactory now. ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = RestApi badExpirationFormatMessage ].! !
+
+!RestApiTest methodsFor: 'testing-checkout cart' stamp: 'JA 6/17/2018 23:54:43'!
+test15CannotCheckoutWithCardWithBadOwnerFormat
+	| api market creditCard cart cartId |
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
+	api _ RestApi forMarket: market.
+	
+	cartId _ market
+		createCartForClientWithCredentials: testObjectsFactory activeClient -> testObjectsFactory activeClientPassword
+		on: testObjectsFactory now.
+	cart _ market cartWithId: cartId on: testObjectsFactory now.
+	cart add: 1 of: testObjectsFactory itemSellByTheStore.
+	
+	creditCard _ testObjectsFactory notExpiredCreditCard.
+	
+	self
+		should: [
+			api
+				checkoutCart: cartId 
+				creditCardNumber: creditCard number
+				creditCardExpiration: (self monthOfYearToApiFormat: creditCard expiration)
+				creditCardOwner: '1234567890123456789012345678901'
+				on: testObjectsFactory now. ]
+		raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = CreditCard badOwnerFormatMessage ].! !
+
 
 !RestApiTest methodsFor: 'private' stamp: 'JA 6/17/2018 21:26:26'!
 monthOfYearToApiFormat: monthOfYear
@@ -598,6 +650,49 @@ test13ListPurchasesReturnsEveryPurchaseOfAClient
 	self assert: (purchases key occurrencesOf: testObjectsFactory itemSellByTheStore) equals: 3.
 	self assert: (purchases key occurrencesOf: testObjectsFactory anotherItemSellByTheStore) equals: 1.
 	self assert: purchases value equals: (testObjectsFactory itemSellByTheStorePrice * 3) + (testObjectsFactory anotherItemSellByTheStorePrice).! !
+
+!RestApiTest methodsFor: 'testing-list purchases' stamp: 'JA 6/18/2018 00:02:00'!
+test16CannotListPurchasesWithInvalidClientId
+	| api market |
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
+	api _ RestApi forMarket: market.
+	
+	self
+		should: [
+			api
+				listPurchasesOfClient: 'invalid client id'
+				withPassword: testObjectsFactory activeClientPassword
+		] raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = Market invalidClientIdOrPasswordMessage ].! !
+
+!RestApiTest methodsFor: 'testing-list purchases' stamp: 'JA 6/18/2018 00:02:39'!
+test17CannotListPurchasesWithInvalidPassword
+	| api market |
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
+	api _ RestApi forMarket: market.
+	
+	self
+		should: [
+			api
+				listPurchasesOfClient: testObjectsFactory activeClient
+				withPassword: 'invalid password'
+		] raise: Error - MessageNotUnderstood
+		withExceptionDo: [ :anError |
+			self assert: anError messageText = Market invalidClientIdOrPasswordMessage ].! !
+
+!RestApiTest methodsFor: 'testing-list purchases' stamp: 'JA 6/18/2018 00:04:45'!
+test18PurchasesListIsEmptyForNewClient
+	| api market purchases |
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
+	api _ RestApi forMarket: market.
+	
+	purchases _ api
+		listPurchasesOfClient: testObjectsFactory activeClient
+		withPassword: testObjectsFactory activeClientPassword.
+	
+	self assert: purchases key isEmpty.
+	self assert: purchases value equals: 0.! !
 
 
 !classDefinition: #Cart category: #TusLibros!
@@ -873,9 +968,15 @@ owner
 CreditCard class
 	instanceVariableNames: ''!
 
-!CreditCard class methodsFor: 'instance creation' stamp: 'JA 6/17/2018 20:53:00'!
+!CreditCard class methodsFor: 'instance creation' stamp: 'JA 6/17/2018 23:53:33'!
 of: anOwner withNumber: aNumber andExpiration: aMonthOfYear 
+	(anOwner size <= 30) ifFalse: [ self error: self badOwnerFormatMessage ].
 	^self new withOwner: anOwner withNumber: aNumber withExpiration: aMonthOfYear.! !
+
+
+!CreditCard class methodsFor: 'error handling' stamp: 'JA 6/17/2018 23:54:18'!
+badOwnerFormatMessage
+	^'Nombre del dueño de la tarjeta muy largo'! !
 
 
 !classDefinition: #Market category: #TusLibros!
@@ -936,11 +1037,11 @@ generateTransactionId
 	^lastTransactionId.! !
 
 
-!Market methodsFor: 'purchases' stamp: 'JA 6/17/2018 22:36:25'!
+!Market methodsFor: 'purchases' stamp: 'JA 6/18/2018 00:06:44'!
 purchasesOf: credentials
 	| clientPurchases totalAmount |
 	self checkValidCredentials: credentials.
-	clientPurchases _ purchases at: credentials key.
+	clientPurchases _ purchases at: credentials key ifAbsent: [ Bag new ].
 	totalAmount _ clientPurchases inject: 0 into: [ :sum :item | sum + catalog at: item ].
 	^(clientPurchases -> totalAmount)! !
 
@@ -985,7 +1086,7 @@ addToCart: cartId bookIsbn: isbn quantity: quantity on: creationTime
 	cart _ market cartWithId: cartId on: creationTime.
 	cart add: quantity of: isbn.! !
 
-!RestApi methodsFor: 'api' stamp: 'JA 6/17/2018 21:06:37'!
+!RestApi methodsFor: 'api' stamp: 'JA 6/17/2018 23:52:08'!
 checkoutCart: cartId
 creditCardNumber: creditCardNumber
 creditCardExpiration: creditCardExpiration
@@ -1019,12 +1120,17 @@ withMarket: aMarket
 	market _ aMarket.! !
 
 
-!RestApi methodsFor: 'input' stamp: 'JA 6/17/2018 21:23:00'!
+!RestApi methodsFor: 'input' stamp: 'JA 6/17/2018 23:47:32'!
 expirationToMonthOfYear: expirationString
 	| year month |
+	(expirationString size = 6 and: [ expirationString allSatisfy: [ :char | char isDigit ]]) ifFalse: [
+		self error: self class badExpirationFormatMessage
+	].
 	year _ (expirationString copyFrom: 3 to: 6) asNumber.
 	month _ (expirationString copyFrom: 1 to: 2) asNumber.
-	^GregorianMonthOfYear yearNumber: year monthNumber: month.! !
+	[ ^GregorianMonthOfYear yearNumber: year monthNumber: month ]
+		on: Exception
+		do: [ self error: self class badExpirationFormatMessage ].! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -1035,6 +1141,11 @@ RestApi class
 !RestApi class methodsFor: 'initialization' stamp: 'MC 6/17/2018 19:35:14'!
 forMarket: aMarket 
 	^self new withMarket: aMarket.! !
+
+
+!RestApi class methodsFor: 'error handling' stamp: 'JA 6/17/2018 23:30:28'!
+badExpirationFormatMessage
+	^'Formato incorrecto para el mes de expiración de la tarjeta'! !
 
 
 !classDefinition: #Sale category: #TusLibros!
