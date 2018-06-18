@@ -302,21 +302,24 @@ sufficientFunds: funds on: creditCard
 
 !classDefinition: #RestApiTest category: #TusLibros!
 TestCase subclass: #RestApiTest
-	instanceVariableNames: 'testObjectsFactory'
+	instanceVariableNames: 'testObjectsFactory debitFromBlock stolenCreditCardBlock sufficientFundsOnCreditCardBlock'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!RestApiTest methodsFor: 'setup' stamp: 'MC 6/16/2018 14:01:42'!
+!RestApiTest methodsFor: 'setup' stamp: 'JA 6/17/2018 21:36:40'!
 setUp 
 
-	testObjectsFactory := StoreTestObjectsFactory new.! !
+	testObjectsFactory := StoreTestObjectsFactory new.
+	debitFromBlock := [ :p1 :p2 | ].
+	stolenCreditCardBlock := [ :p1 | false ].
+	sufficientFundsOnCreditCardBlock := [ :p1 :p2 | true ].! !
 
 
-!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/17/2018 19:29:25'!
+!RestApiTest methodsFor: 'testing-create cart' stamp: 'JA 6/17/2018 21:35:14'!
 test01CreateCartWithValidClientIdAndPassword
 	| api cartId market cart |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	cartId _ api
 		createCartFor: testObjectsFactory activeClient
@@ -326,10 +329,10 @@ test01CreateCartWithValidClientIdAndPassword
 	cart _ market cartWithId: cartId on: testObjectsFactory now.
 	self assert: cart isEmpty.! !
 
-!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/17/2018 20:12:49'!
+!RestApiTest methodsFor: 'testing-create cart' stamp: 'JA 6/17/2018 21:35:20'!
 test02CannotCreateCartWithValidClientIdAndInvalidPassword
 	| api market |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	self
 		should: [
@@ -341,10 +344,10 @@ test02CannotCreateCartWithValidClientIdAndInvalidPassword
 		withExceptionDo: [ :anError |
 			self assert: anError messageText = Market invalidClientIdOrPasswordMessage. ].! !
 
-!RestApiTest methodsFor: 'testing-create cart' stamp: 'MC 6/17/2018 20:15:11'!
+!RestApiTest methodsFor: 'testing-create cart' stamp: 'JA 6/17/2018 21:35:23'!
 test03CannotCreateCartWithInvalidClientId
 	| api market |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	self
 		should: [
@@ -357,10 +360,10 @@ test03CannotCreateCartWithInvalidClientId
 			self assert: anError messageText = Market invalidClientIdOrPasswordMessage. ].! !
 
 
-!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/17/2018 20:19:32'!
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'JA 6/17/2018 21:35:28'!
 test04AddToCartWithValidParameters
 	| api market cart cartId |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	
 	cartId _ market
@@ -375,10 +378,10 @@ test04AddToCartWithValidParameters
 	cart _ market cartWithId: cartId on: testObjectsFactory now.
 	self assert: 2 equals: (cart occurrencesOf: testObjectsFactory itemSellByTheStore).	! !
 
-!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/17/2018 20:24:34'!
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'JA 6/17/2018 21:35:31'!
 test05CannotAddToCartWithInvalidCartId
 	| api market |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	
 	self
@@ -392,10 +395,10 @@ test05CannotAddToCartWithInvalidCartId
 		withExceptionDo: [ :anError |
 			self assert: anError messageText = CartsStore invalidCartIdMessage. ].! !
 
-!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/17/2018 20:28:17'!
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'JA 6/17/2018 21:35:34'!
 test06CannotAddToCartInvalidIsbn
 	| api market cart cartId |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	cartId _ market
 		createCartForClientWithCredentials: testObjectsFactory activeClient -> testObjectsFactory activeClientPassword
@@ -414,10 +417,10 @@ test06CannotAddToCartInvalidIsbn
 			self assert: cart isEmpty.
 			self assert: anError messageText = cart invalidItemErrorMessage. ].! !
 
-!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/17/2018 20:29:29'!
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'JA 6/17/2018 21:35:39'!
 test07CannotAddToCartInvalidQuantity
 	| api market cart cartId |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	cartId _ market
 		createCartForClientWithCredentials: testObjectsFactory activeClient -> testObjectsFactory activeClientPassword
@@ -436,10 +439,10 @@ test07CannotAddToCartInvalidQuantity
 			self assert: cart isEmpty.
 			self assert: anError messageText = cart invalidQuantityErrorMessage. ].! !
 
-!RestApiTest methodsFor: 'testing-add to cart' stamp: 'MC 6/17/2018 20:30:53'!
+!RestApiTest methodsFor: 'testing-add to cart' stamp: 'JA 6/17/2018 21:35:42'!
 test08CannotAddToCartAfter30Minutes
 	| api market cart cartId |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	cartId _ market
 		createCartForClientWithCredentials: testObjectsFactory activeClient -> testObjectsFactory activeClientPassword
@@ -451,7 +454,7 @@ test08CannotAddToCartAfter30Minutes
 				addToCart: cartId
 				bookIsbn: testObjectsFactory itemSellByTheStore
 				quantity: 7
-				on: testObjectsFactory now + 31 minutes ]
+				on: (testObjectsFactory now next: (TimeUnits second with: 31)) ]
 		raise: Error - MessageNotUnderstood
 		withExceptionDo: [ :anError |
 			self assert: anError messageText = CartsStore cartIdIsExpired.
@@ -459,10 +462,10 @@ test08CannotAddToCartAfter30Minutes
 			self assert: cart isEmpty. ].! !
 
 
-!RestApiTest methodsFor: 'testing-list cart' stamp: 'MC 6/17/2018 20:35:01'!
+!RestApiTest methodsFor: 'testing-list cart' stamp: 'JA 6/17/2018 21:35:47'!
 test09ListCartReturnsCartItemsCorrectly
 	| api cart itemList cartId market |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	
 	cartId _ market
@@ -480,10 +483,10 @@ test09ListCartReturnsCartItemsCorrectly
 	self assert: (itemList at: testObjectsFactory itemSellByTheStore) equals: 1.
 	self assert: (itemList at: testObjectsFactory anotherItemSellByTheStore) equals: 2.! !
 
-!RestApiTest methodsFor: 'testing-list cart' stamp: 'MC 6/17/2018 20:36:37'!
+!RestApiTest methodsFor: 'testing-list cart' stamp: 'JA 6/17/2018 21:35:50'!
 test10CannotListInvalidIdCart
 	| api cart cartId market |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	
 	cartId _ market
@@ -502,10 +505,10 @@ test10CannotListInvalidIdCart
 			self assert: anError messageText = CartsStore invalidCartIdMessage ].! !
 
 
-!RestApiTest methodsFor: 'testing-checkout cart' stamp: 'MC 6/17/2018 20:39:16'!
+!RestApiTest methodsFor: 'testing-checkout cart' stamp: 'JA 6/17/2018 21:35:54'!
 test11SuccessfulCartCheckoutReturnsTransactionId
 	| api cart cartId market creditCard transactionId |
-	market _ testObjectsFactory defaultMarket.
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
 	api _ RestApi forMarket: market.
 	
 	cartId _ market
@@ -519,36 +522,82 @@ test11SuccessfulCartCheckoutReturnsTransactionId
 	transactionId _ api
 		checkoutCart: cartId
 		creditCardNumber: creditCard number
-		creditCardExpiration: creditCard expiration asString
+		creditCardExpiration: (self monthOfYearToApiFormat: creditCard expiration)
 		creditCardOwner: creditCard owner
 		on: testObjectsFactory now.
 		
 	self assert: transactionId > 0.! !
 
-!RestApiTest methodsFor: 'testing-checkout cart' stamp: 'JA 6/17/2018 18:52:47'!
+!RestApiTest methodsFor: 'testing-checkout cart' stamp: 'JA 6/17/2018 21:40:34'!
 test12CannotCheckoutWithInvalidCartId
-	| api cartsStore cart creditCard |
-	cart _ testObjectsFactory createCart.
-	cart add: 1 of: testObjectsFactory itemSellByTheStore.
-	cartsStore _ CartsStore new
-		at: 'cart id' put: cart on: testObjectsFactory now;
-		yourself.
-	api _ RestApi
-		forCatalog: testObjectsFactory defaultCatalog
-		andClients: testObjectsFactory defaultClients
-		storingOn: cartsStore.
+	| api market creditCard |
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
+	api _ RestApi forMarket: market.
+	
 	creditCard _ testObjectsFactory notExpiredCreditCard.
 	
-	self should: [
-		api
-			checkoutCart: 'invalid cart id'
-			creditCardNumber: creditCard number
-			creditCardExpiration: creditCard expiration asString
-			creditCardOwner: creditCard owner
-			on: testObjectsFactory now ]
+	self
+		should: [
+			api
+				checkoutCart: 'invalid cart id'
+				creditCardNumber: creditCard number
+				creditCardExpiration: (self monthOfYearToApiFormat: creditCard expiration)
+				creditCardOwner: creditCard owner
+				on: testObjectsFactory now. ]
 		raise: Error - MessageNotUnderstood
 		withExceptionDo: [ :anError |
 			self assert: anError messageText = CartsStore invalidCartIdMessage ].! !
+
+
+!RestApiTest methodsFor: 'private' stamp: 'JA 6/17/2018 21:26:26'!
+monthOfYearToApiFormat: monthOfYear
+	^(monthOfYear month number printStringBase: 10 length: 2 padded: true) , monthOfYear year number asString! !
+
+
+!RestApiTest methodsFor: 'simulating' stamp: 'JA 6/17/2018 21:37:02'!
+debitFrom: aCreditCard amount: anAmount
+	debitFromBlock value: aCreditCard value: anAmount.! !
+
+!RestApiTest methodsFor: 'simulating' stamp: 'JA 6/17/2018 21:37:14'!
+isStolen: aCreditCard
+	^stolenCreditCardBlock value: aCreditCard.! !
+
+!RestApiTest methodsFor: 'simulating' stamp: 'JA 6/17/2018 21:37:24'!
+sufficientFunds: funds on: creditCard
+	^sufficientFundsOnCreditCardBlock value: funds value: creditCard.! !
+
+
+!RestApiTest methodsFor: 'testing-list purchases' stamp: 'JA 6/17/2018 22:41:32'!
+test13ListPurchasesReturnsEveryPurchaseOfAClient
+	| api market creditCard firstCartId firstCart secondCart secondCartId purchases |
+	market _ testObjectsFactory defaultMarketWithMerchantProcessor: self.
+	api _ RestApi forMarket: market.
+	
+	firstCartId _ market
+		createCartForClientWithCredentials: (testObjectsFactory activeClient -> testObjectsFactory activeClientPassword)
+		on: testObjectsFactory now.
+	firstCart _ market cartWithId: firstCartId on: testObjectsFactory now.
+	firstCart add: 1 of: testObjectsFactory itemSellByTheStore.
+	
+	secondCartId _ market
+		createCartForClientWithCredentials: (testObjectsFactory activeClient -> testObjectsFactory activeClientPassword)
+		on: testObjectsFactory now.
+	secondCart _ market cartWithId: secondCartId on: testObjectsFactory now.
+	secondCart add: 2 of: testObjectsFactory itemSellByTheStore.
+	secondCart add: 1 of: testObjectsFactory anotherItemSellByTheStore.
+	
+	creditCard _ testObjectsFactory notExpiredCreditCard.
+	
+	market checkout: firstCart charging: creditCard on: testObjectsFactory now.
+	market checkout: secondCart charging: creditCard on: testObjectsFactory now.
+	
+	purchases _ api
+		listPurchasesOfClient: testObjectsFactory activeClient
+		withPassword: testObjectsFactory activeClientPassword.
+	
+	self assert: (purchases key occurrencesOf: testObjectsFactory itemSellByTheStore) equals: 3.
+	self assert: (purchases key occurrencesOf: testObjectsFactory anotherItemSellByTheStore) equals: 1.
+	self assert: purchases value equals: (testObjectsFactory itemSellByTheStorePrice * 3) + (testObjectsFactory anotherItemSellByTheStorePrice).! !
 
 
 !classDefinition: #Cart category: #TusLibros!
@@ -651,14 +700,14 @@ Object subclass: #CartsStore
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!CartsStore methodsFor: 'accessing' stamp: 'MC 6/16/2018 15:48:05'!
+!CartsStore methodsFor: 'accessing' stamp: 'JA 6/17/2018 21:02:07'!
 at: cartId on: currentTime
 	| lastUsageTime |
 	(carts includesKey: cartId) ifFalse: [
 		self error: self class invalidCartIdMessage
 	].
 	lastUsageTime _ (carts at: cartId) key.
-	currentTime > (lastUsageTime + 30 minutes) ifTrue: [
+	currentTime > (lastUsageTime next: (TimeUnits second with: 30)) ifTrue: [
 		self error: self class cartIdIsExpired.
 	].
 	^ (carts at: cartId) value.! !
@@ -784,24 +833,6 @@ cartCanNotBeEmptyErrorMessage
 	^'Can not check out an empty cart'! !
 
 
-!classDefinition: #Client category: #TusLibros!
-Object subclass: #Client
-	instanceVariableNames: 'id password'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'TusLibros'!
-
-"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
-
-!classDefinition: 'Client class' category: #TusLibros!
-Client class
-	instanceVariableNames: ''!
-
-!Client class methodsFor: 'as yet unclassified' stamp: 'MC 6/17/2018 19:49:29'!
-withId: aString andPassword: aString2 
-	self shouldBeImplemented.! !
-
-
 !classDefinition: #CreditCard category: #TusLibros!
 Object subclass: #CreditCard
 	instanceVariableNames: 'expiration number owner'
@@ -817,10 +848,11 @@ isExpiredOn: aDate
 	"^expiration start < (Month month: aDate monthIndex year: aDate yearNumber) start "! !
 
 
-!CreditCard methodsFor: 'initialization' stamp: 'HernanWilkinson 6/17/2013 18:38'!
-initializeExpiringOn: aMonth 
-	
-	expiration := aMonth ! !
+!CreditCard methodsFor: 'initialization' stamp: 'JA 6/17/2018 20:53:52'!
+withOwner: anOwner withNumber: aNumber withExpiration: aMonthOfYear 
+	owner _ anOwner.
+	number _ aNumber.
+	expiration _ aMonthOfYear.! !
 
 
 !CreditCard methodsFor: 'inspecting' stamp: 'JA 6/17/2018 18:49:48'!
@@ -841,48 +873,47 @@ owner
 CreditCard class
 	instanceVariableNames: ''!
 
-!CreditCard class methodsFor: 'instance creation' stamp: 'HernanWilkinson 6/17/2013 18:38'!
-expiringOn: aMonth 
-	
-	^self new initializeExpiringOn: aMonth! !
+!CreditCard class methodsFor: 'instance creation' stamp: 'JA 6/17/2018 20:53:00'!
+of: anOwner withNumber: aNumber andExpiration: aMonthOfYear 
+	^self new withOwner: anOwner withNumber: aNumber withExpiration: aMonthOfYear.! !
 
 
 !classDefinition: #Market category: #TusLibros!
 Object subclass: #Market
-	instanceVariableNames: 'clients cartsStore catalog lastCartId'
+	instanceVariableNames: 'clients cartsStore catalog lastCartId salesBook merchantProcessor lastTransactionId clientOfCart purchases'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Market methodsFor: 'clients' stamp: 'MC 6/17/2018 19:42:18'!
-clientWithId: clientId andPassword: password
-	(clients includesKey: clientId) ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
-	(clients at: clientId) = password ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
-	^ clientId -> password.! !
 
-
-!Market methodsFor: 'initialization' stamp: 'MC 6/17/2018 20:08:42'!
-withClients: someClients andCatalog: aCatalog
+!Market methodsFor: 'initialization' stamp: 'JA 6/17/2018 22:38:20'!
+withClients: someClients andCatalog: aCatalog andMerchantProcessor: aMerchantProcessor
 	lastCartId _ 0.
+	lastTransactionId _ 0.
 	cartsStore _ CartsStore new.
 	clients _ someClients.
-	catalog _ aCatalog.! !
+	catalog _ aCatalog.
+	salesBook _ OrderedCollection new.
+	merchantProcessor _ aMerchantProcessor.
+	purchases _ Dictionary new.
+	clientOfCart _ Dictionary new.! !
 
 
 !Market methodsFor: 'cart' stamp: 'MC 6/17/2018 20:00:35'!
 cartWithId: cartId on: currentTime 
 	^cartsStore at: cartId on: currentTime.! !
 
-!Market methodsFor: 'cart' stamp: 'MC 6/17/2018 20:10:15'!
+!Market methodsFor: 'cart' stamp: 'JA 6/17/2018 22:38:00'!
 createCartForClientWithCredentials: credentials on: creationTime 
-	| cartId |
-	(clients includesKey: credentials key) ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
-	(clients at: credentials key) = credentials value ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
+	| cartId cart |
+	self checkValidCredentials: credentials.
 	cartId _ self generateCartId.
+	cart _ (Cart acceptingItemsOf: catalog).
 	cartsStore
 		at: cartId
-		put: (Cart acceptingItemsOf: catalog)
+		put: cart
 		on: creationTime.
+	clientOfCart at: cart put: credentials key.
 	^ cartId.! !
 
 !Market methodsFor: 'cart' stamp: 'MC 6/17/2018 20:08:26'!
@@ -890,15 +921,50 @@ generateCartId
 	lastCartId _ lastCartId + 1.
 	^lastCartId.! !
 
+
+!Market methodsFor: 'checkout' stamp: 'JA 6/17/2018 22:25:34'!
+checkout: aCart charging: aCreditCard on: currentTime
+	| cashier |
+	cashier _ Cashier toCheckout: aCart charging: aCreditCard on: currentTime registeringOn: salesBook debitingOn: merchantProcessor.
+	cashier checkOut.
+	self registerPurchases: aCart.
+	^self generateTransactionId.! !
+
+!Market methodsFor: 'checkout' stamp: 'JA 6/17/2018 21:38:50'!
+generateTransactionId
+	lastTransactionId _ lastTransactionId + 1.
+	^lastTransactionId.! !
+
+
+!Market methodsFor: 'purchases' stamp: 'JA 6/17/2018 22:36:25'!
+purchasesOf: credentials
+	| clientPurchases totalAmount |
+	self checkValidCredentials: credentials.
+	clientPurchases _ purchases at: credentials key.
+	totalAmount _ clientPurchases inject: 0 into: [ :sum :item | sum + catalog at: item ].
+	^(clientPurchases -> totalAmount)! !
+
+!Market methodsFor: 'purchases' stamp: 'JA 6/17/2018 22:30:19'!
+registerPurchases: aCart
+	| clientPurchases |
+	clientPurchases _ purchases at: (clientOfCart at: aCart) ifAbsentPut: [ Bag new ].
+	clientPurchases addAll: aCart items.! !
+
+
+!Market methodsFor: 'assertions' stamp: 'JA 6/17/2018 22:04:26'!
+checkValidCredentials: credentials
+	(clients includesKey: credentials key) ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
+	(clients at: credentials key) = credentials value ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].! !
+
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 !classDefinition: 'Market class' category: #TusLibros!
 Market class
 	instanceVariableNames: ''!
 
-!Market class methodsFor: 'initialization' stamp: 'MC 6/17/2018 20:03:22'!
-forClients: clients andCatalog: catalog
-	^self new withClients: clients andCatalog: catalog.! !
+!Market class methodsFor: 'initialization' stamp: 'JA 6/17/2018 21:34:31'!
+forClients: clients andCatalog: catalog andMerchantProcessor: merchantProcessor
+	^self new withClients: clients andCatalog: catalog andMerchantProcessor: merchantProcessor.! !
 
 
 !Market class methodsFor: 'error handling' stamp: 'MC 6/17/2018 20:13:26'!
@@ -919,29 +985,23 @@ addToCart: cartId bookIsbn: isbn quantity: quantity on: creationTime
 	cart _ market cartWithId: cartId on: creationTime.
 	cart add: quantity of: isbn.! !
 
-!RestApi methodsFor: 'api' stamp: 'MC 6/17/2018 20:39:37'!
+!RestApi methodsFor: 'api' stamp: 'JA 6/17/2018 21:06:37'!
 checkoutCart: cartId
 creditCardNumber: creditCardNumber
 creditCardExpiration: creditCardExpiration
 creditCardOwner: creditCardOwner
 on: currentTime
-	| |
-	"cart _ market cartWithId: cartId on: currentTime.
-	creditCard _ CreditCard of: creditCardOwner withNumber: creditCardNumber withExpiration: creditCardExpiration.
-	Cashier toCheckout: cart charging:  on:  registeringOn:  debitingOn: checkOut"
-	^cartId.! !
+	| cart creditCard expiration |
+	cart _ market cartWithId: cartId on: currentTime.
+	expiration _ self expirationToMonthOfYear: creditCardExpiration.
+	creditCard _ CreditCard of: creditCardOwner withNumber: creditCardNumber andExpiration: expiration.
+	^market checkout: cart charging: creditCard on: currentTime.! !
 
-!RestApi methodsFor: 'api' stamp: 'MC 6/17/2018 20:06:34'!
+!RestApi methodsFor: 'api' stamp: 'JA 6/17/2018 22:12:30'!
 createCartFor: clientId with: password on: creationTime
 	| credentials |
 	credentials _ clientId -> password.
-	^ market createCartForClientWithCredentials: credentials on: creationTime.
-	"(clients includesKey: clientId) ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
-	(clients at: clientId) = password ifFalse: [ self error: self class invalidClientIdOrPasswordMessage ].
-	cartsStore
-		at: 'cart id'
-		put: 'cart'
-		on: creationTime."! !
+	^ market createCartForClientWithCredentials: credentials on: creationTime.! !
 
 !RestApi methodsFor: 'api' stamp: 'MC 6/17/2018 20:35:48'!
 listCart: cartId on: currentTime
@@ -949,10 +1009,22 @@ listCart: cartId on: currentTime
 	cart _ market cartWithId: cartId on: currentTime.
 	^cart items inject: Dictionary new into: [ :list :item | list at: item put: (cart occurrencesOf: item); yourself ].! !
 
+!RestApi methodsFor: 'api' stamp: 'JA 6/17/2018 22:02:33'!
+listPurchasesOfClient: clientId withPassword: clientPassword
+	^market purchasesOf: (clientId -> clientPassword).! !
+
 
 !RestApi methodsFor: 'initialization' stamp: 'MC 6/17/2018 19:59:15'!
 withMarket: aMarket
 	market _ aMarket.! !
+
+
+!RestApi methodsFor: 'input' stamp: 'JA 6/17/2018 21:23:00'!
+expirationToMonthOfYear: expirationString
+	| year month |
+	year _ (expirationString copyFrom: 3 to: 6) asNumber.
+	month _ (expirationString copyFrom: 1 to: 2) asNumber.
+	^GregorianMonthOfYear yearNumber: year monthNumber: month.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -1017,17 +1089,17 @@ defaultCatalog
 		yourself ! !
 
 
-!StoreTestObjectsFactory methodsFor: 'credit card' stamp: 'JA 6/12/2018 08:44:39'!
+!StoreTestObjectsFactory methodsFor: 'credit card' stamp: 'JA 6/17/2018 21:39:46'!
 expiredCreditCard
 	| expirationDate |
 	expirationDate _ today monthOfYear previousMonth: GregorianMonth january.
-	^CreditCard expiringOn: expirationDate.! !
+	^CreditCard of: self activeClient withNumber: '54000000000001' andExpiration: expirationDate.! !
 
-!StoreTestObjectsFactory methodsFor: 'credit card' stamp: 'JA 6/12/2018 08:44:33'!
+!StoreTestObjectsFactory methodsFor: 'credit card' stamp: 'JA 6/17/2018 21:29:38'!
 notExpiredCreditCard
 	| expirationDate |
 	expirationDate _ today monthOfYear nextMonth: GregorianMonth january.
-	^CreditCard expiringOn: expirationDate.! !
+	^CreditCard of: self activeClient withNumber: '54000000000001' andExpiration: expirationDate.! !
 
 
 !StoreTestObjectsFactory methodsFor: 'items' stamp: 'JA 6/17/2018 18:07:56'!
@@ -1055,11 +1127,11 @@ itemSellByTheStorePrice
 	^10! !
 
 
-!StoreTestObjectsFactory methodsFor: 'initialize' stamp: 'JA 6/17/2018 18:00:41'!
+!StoreTestObjectsFactory methodsFor: 'initialize' stamp: 'JA 6/17/2018 20:58:10'!
 initialize
 
 	today := FixedGregorianDate today.
-	now := DateAndTime now.! !
+	now := GregorianDateTime now.! !
 
 
 !StoreTestObjectsFactory methodsFor: 'clients' stamp: 'JA 6/17/2018 17:59:02'!
@@ -1088,6 +1160,6 @@ today
 	^ today! !
 
 
-!StoreTestObjectsFactory methodsFor: 'market' stamp: 'MC 6/17/2018 20:02:55'!
-defaultMarket
-	^ Market forClients: self defaultClients andCatalog: self defaultCatalog .! !
+!StoreTestObjectsFactory methodsFor: 'market' stamp: 'JA 6/17/2018 21:33:47'!
+defaultMarketWithMerchantProcessor: merchantProcessor
+	^ Market forClients: self defaultClients andCatalog: self defaultCatalog andMerchantProcessor: merchantProcessor.! !
